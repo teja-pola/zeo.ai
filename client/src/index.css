@@ -1,0 +1,222 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* ZEO Design System - Fresh Green Theme */
+    --background: 120 43% 98%;
+    --foreground: 120 70% 10%;
+
+    --card: 123 25% 86%;
+    --card-foreground: 120 70% 10%;
+
+    --popover: 123 25% 86%;
+    --popover-foreground: 120 70% 10%;
+
+    --primary: 127 25% 90%;
+    --primary-foreground: 120 70% 10%;
+
+    --secondary: 125 25% 85%;
+    --secondary-foreground: 120 70% 10%;
+
+    --muted: 125 25% 90%;
+    --muted-foreground: 120 40% 30%;
+
+    --accent: 123 25% 82%;
+    --accent-foreground: 120 70% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 120 43% 98%;
+
+    --border: 120 15% 75%;
+    --input: 123 25% 86%;
+    --ring: 127 25% 90%;
+
+    --radius: 1rem;
+
+    /* ZEO Custom Design Tokens */
+    --zeo-primary: 120 50% 25%;        /* Dark green for text visibility */
+    --zeo-primary-glow: 123 25% 86%;   /* Light green for glow */
+    --zeo-secondary: 127 30% 30%;      /* Dark green secondary */
+    --zeo-secondary-glow: 125 25% 90%; /* Light green secondary glow */
+    --zeo-neutral: 123 25% 86%;        /* Card background */
+    --zeo-surface: 120 43% 98%;        /* Main background */
+    --zeo-glass: 125 25% 85%;          /* Glass morphism base */
+    
+    /* Emotion Colors */
+    --emotion-calm: 120 50% 25%;       /* Dark green - calm */
+    --emotion-happy: 123 30% 30%;      /* Dark green - happy */
+    --emotion-anxious: 45 93% 67%;     /* Amber - anxious */
+    --emotion-sad: 231 68% 66%;        /* Soft blue - sad */
+    --emotion-excited: 125 30% 30%;    /* Dark green - excited */
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(120 50% 25%) 0%, hsl(127 30% 30%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(var(--zeo-glass) / 0.1) 0%, hsl(var(--zeo-glass) / 0.05) 100%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(var(--zeo-primary) / 0.3) 0%, transparent 70%);
+    
+    /* Shadows & Effects */
+    --shadow-glow: 0 0 40px hsl(123 25% 86% / 0.5);
+    --shadow-card: 0 8px 32px hsl(var(--zeo-surface) / 0.8);
+    --shadow-avatar: 0 0 60px hsl(123 25% 86% / 0.6);
+    
+    /* Animations */
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --sidebar-background: 123 25% 86%;
+    --sidebar-foreground: 120 70% 10%;
+    --sidebar-primary: 120 50% 25%;
+    --sidebar-primary-foreground: 120 43% 98%;
+    --sidebar-accent: 125 25% 85%;
+    --sidebar-accent-foreground: 120 70% 10%;
+    --sidebar-border: 120 15% 75%;
+    --sidebar-ring: 120 50% 25%;
+  }
+
+  .light {
+    --background: 120 43% 98%;
+    --foreground: 120 70% 10%;
+
+    --card: 127 25% 90%;
+    --card-foreground: 120 70% 10%;
+
+    --popover: 127 25% 90%;
+    --popover-foreground: 120 70% 10%;
+
+    --primary: 123 25% 86%;
+    --primary-foreground: 120 70% 10%;
+
+    --secondary: 125 25% 85%;
+    --secondary-foreground: 120 70% 10%;
+
+    --muted: 125 25% 90%;
+    --muted-foreground: 120 40% 30%;
+
+    --accent: 123 25% 82%;
+    --accent-foreground: 120 70% 10%;
+
+    --destructive: 0 84% 50%;
+    --destructive-foreground: 120 43% 98%;
+
+    --border: 120 15% 75%;
+    --input: 123 25% 86%;
+    --ring: 120 50% 25%;
+
+    /* ZEO Light Mode Tokens */
+    --zeo-primary: 120 50% 25%;
+    --zeo-primary-glow: 123 25% 86%;
+    --zeo-secondary: 127 30% 30%;
+    --zeo-secondary-glow: 125 25% 90%;
+    --zeo-neutral: 127 25% 90%;
+    --zeo-surface: 120 43% 98%;
+    --zeo-glass: 123 25% 86%;
+
+    --gradient-hero: linear-gradient(135deg, hsl(120 50% 25%) 0%, hsl(127 30% 30%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(var(--zeo-glass) / 0.8) 0%, hsl(var(--zeo-glass) / 0.4) 100%);
+    --shadow-glow: 0 0 40px hsl(123 25% 86% / 0.4);
+    --shadow-card: 0 8px 32px hsl(120 70% 10% / 0.1);
+    --shadow-avatar: 0 0 60px hsl(123 25% 86% / 0.5);
+
+    --sidebar-background: 127 25% 90%;
+    --sidebar-foreground: 120 70% 10%;
+    --sidebar-primary: 120 50% 25%;
+    --sidebar-primary-foreground: 120 43% 98%;
+    --sidebar-accent: 125 25% 85%;
+    --sidebar-accent-foreground: 120 70% 10%;
+    --sidebar-border: 120 15% 75%;
+    --sidebar-ring: 120 50% 25%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background: hsl(var(--background));
+    background-image: 
+      radial-gradient(ellipse at 20% 80%, hsl(var(--zeo-primary) / 0.1) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, hsl(var(--zeo-secondary) / 0.1) 0%, transparent 50%);
+  }
+
+  /* Glass morphism utility classes */
+  .glass {
+    background: hsl(var(--zeo-glass) / 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--border) / 0.2);
+  }
+
+  .glass-strong {
+    background: hsl(var(--zeo-glass) / 0.2);
+    backdrop-filter: blur(40px);
+    border: 1px solid hsl(var(--border) / 0.3);
+  }
+
+  /* Glow effects */
+  .glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .glow-soft {
+    box-shadow: 0 0 20px hsl(var(--zeo-primary) / 0.2);
+  }
+
+  /* Avatar breathing animation */
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+
+  .breathe {
+    animation: breathe 4s ease-in-out infinite;
+  }
+
+  /* Floating animation */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(120 50% 25%) 0%, hsl(127 30% 30%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--zeo-surface));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--zeo-primary) / 0.3);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--zeo-primary) / 0.5);
+  }
+}
