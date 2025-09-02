@@ -3,7 +3,7 @@ require('dotenv').config();
 module.exports = {
   port: process.env.PORT || 3001,
   nodeEnv: process.env.NODE_ENV || 'development',
-  tavusApiKey: process.env.TAVUS_API_KEY || '338a5ddaa6bf4ddaac012ed0138f6476',
+  tavusApiKey: process.env.TAVUS_API_KEY || '76da717b5927458294e0e39cf1c12914',
   tavusApiUrl: process.env.TAVUS_API_URL || 'https://tavusapi.com/v2',
   replicaId: process.env.TAVUS_REPLICA_ID || 'r6ae5b6efc9d',
   defaultPersonaId: process.env.TAVUS_DEFAULT_PERSONA_ID,
