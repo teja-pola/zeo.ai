@@ -63,7 +63,7 @@
 
 ## 🏗️ System Architecture & Tech Stack
 
-<p align="center">
+<p allign="center">
   <img src="./sazeo.png" alt="zeo.ai Architecture" width="600"/>
 </p>
 

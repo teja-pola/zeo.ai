@@ -16,6 +16,10 @@ import Signup from "./pages/Signup";
 import CounsellorSignup from "./pages/CounsellorSignup";
 import StudentSignup from "./pages/StudentSignup";
 import Roll from "./pages/Roll";
+import Resources from "./pages/Resources";
+import "./i18n";
+
+
 
 const queryClient = new QueryClient();
 
@@ -47,14 +51,13 @@ const App = () => (
             <Route element={<MainLayout />}>
               <Route path="/" element={<Landing />} />
               <Route path="/session" element={<Session />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/resources" element={<Resources />} />
             </Route>
             
             {/* Routes without navbar */}
             <Route element={<AuthLayout />}>
               <Route path="/booking" element={<Booking />} />
+              <Route path="*" element={<NotFound />} />
             </Route>
 
             {/* Routes without navbar */}
@@ -65,9 +68,12 @@ const App = () => (
               <Route path="/roll" element={<Roll />} />
             </Route>
 
-            {/* Catch-all */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+         
+            </Routes>   
+
+              
+            
+          
         </TavusProvider>
       </BrowserRouter>
     </TooltipProvider>

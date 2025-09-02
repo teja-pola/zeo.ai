@@ -10,15 +10,15 @@ import {
   Calendar,
   Menu,
   X,
-  ArrowRight
+  ArrowRight,
+  BookOpen
 } from 'lucide-react';
 
 const navItems = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Book Session', href: '/booking', icon: Calendar },
   { name: 'Session', href: '/session', icon: Video },
-  { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Resources', href: '/resources', icon: BookOpen },
 ];
 
 export default function Navigation() {
@@ -41,7 +41,7 @@ export default function Navigation() {
 
   return (
     <div className="fixed top-4 left-0 right-0 z-50">
-      <nav className={`max-w-4xl mx-auto px-6 py-3 rounded-2xl transition-all duration-300 ${
+      <nav className={`max-w-3xl mx-auto px-6 py-3 rounded-2xl transition-all duration-300 ${
         isScrolled ? 'bg-[#345E2C]/95 shadow-lg' : 'bg-[#345E2C]'
       } mx-4 md:mx-auto`}>
         <div className="flex justify-between items-center">
