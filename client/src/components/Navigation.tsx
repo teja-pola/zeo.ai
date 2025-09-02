@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { 
-  Home, 
-  Video, 
-  BarChart3, 
+import {
+  Home,
+  Video,
+  BarChart3,
   Settings,
+  Calendar,
   Menu,
   X,
   ArrowRight
@@ -14,6 +15,7 @@ import {
 
 const navItems = [
   { name: 'Home', href: '/', icon: Home },
+  { name: 'Book Session', href: '/booking', icon: Calendar },
   { name: 'Session', href: '/session', icon: Video },
   { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings },

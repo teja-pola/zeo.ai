@@ -3,6 +3,10 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const axios = require('axios');
 const config = require('./config');
+const connectDB = require('./db/connection');
+
+// Connect to MongoDB
+connectDB();
 
 const app = express();
 
@@ -54,10 +58,16 @@ const tavusApi = axios.create({
   }
 });
 
+// Import routes
+const signupRoutes = require('./routes/signup');
+
 // Routes
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+// Signup routes
+app.use('/api/signup', signupRoutes);
 
 // Get replica details
 app.get('/api/tavus/replica', apiLimiter, authenticate, async (req, res) => {

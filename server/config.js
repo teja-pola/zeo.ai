@@ -7,6 +7,7 @@ module.exports = {
   tavusApiUrl: process.env.TAVUS_API_URL || 'https://tavusapi.com/v2',
   replicaId: process.env.TAVUS_REPLICA_ID || 'r6ae5b6efc9d',
   defaultPersonaId: process.env.TAVUS_DEFAULT_PERSONA_ID,
+  mongodbUri: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/zeoai',
   // Rate limiting
   rateLimit: {
     windowMs: 15 * 60 * 1000, // 15 minutes

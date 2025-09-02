@@ -1,7 +1,7 @@
 import { api } from '@/utils/api';
 import { Replica, ConversationResponse, ApiError } from '@/services/tavusService';
 
-export const tavusApi = {
+class TavusApi {
   async getReplica(): Promise<Replica> {
     try {
       const response = await api.get('/tavus/replica');
@@ -9,7 +9,7 @@ export const tavusApi = {
     } catch (error) {
       throw this.handleError(error);
     }
-  },
+  }
 
   async createConversation(personaId?: string): Promise<ConversationResponse> {
     try {
@@ -18,7 +18,7 @@ export const tavusApi = {
     } catch (error) {
       throw this.handleError(error);
     }
-  },
+  }
 
   private handleError(error: any): ApiError {
     if (error.response) {
@@ -33,4 +33,6 @@ export const tavusApi = {
       details: error
     };
   }
-};
+}
+
+export const tavusApi = new TavusApi();
