@@ -88,7 +88,72 @@ app.get('/api/tavus/replica', authenticate, async (req, res) => {
   }
 });
 
-// Create conversation
+// List active conversations
+app.get('/api/tavus/conversations', authenticate, async (req, res) => {
+  try {
+    console.log('Fetching active conversations...');
+    const response = await tavusApi.get('/conversations');
+    
+    // Ensure we return an array of conversations
+    let conversations = [];
+    if (Array.isArray(response.data)) {
+      conversations = response.data;
+    } else if (response.data && Array.isArray(response.data.data)) {
+      conversations = response.data.data;
+    }
+    
+    console.log('Active conversations:', JSON.stringify(conversations, null, 2));
+    res.json(conversations);
+  } catch (error) {
+    console.error('Error listing conversations:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+    res.status(error.response?.status || 500).json({
+      message: 'Failed to list conversations',
+      code: 'CONVERSATION_LIST_ERROR',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+// End a specific conversation
+app.post('/api/tavus/conversations/:conversationId/end', authenticate, async (req, res) => {
+  const { conversationId } = req.params;
+  console.log(`Attempting to end conversation: ${conversationId}`);
+  
+  try {
+    const response = await tavusApi.post(`/conversations/${conversationId}/end`);
+    console.log(`Successfully ended conversation: ${conversationId}`);
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error ending conversation:', {
+      conversationId,
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+    
+    // If we get a 404, the conversation might already be ended
+    if (error.response?.status === 404) {
+      return res.status(200).json({
+        message: 'Conversation already ended or does not exist',
+        code: 'CONVERSATION_ALREADY_ENDED'
+      });
+    }
+    
+    res.status(error.response?.status || 500).json({
+      message: 'Failed to end conversation',
+      code: 'CONVERSATION_END_ERROR',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+// Create conversation with automatic cleanup if needed
 app.post('/api/tavus/conversation', authenticate, async (req, res) => {
   try {
     const { personaId } = req.body;
@@ -102,33 +167,80 @@ app.post('/api/tavus/conversation', authenticate, async (req, res) => {
 
     console.log('Creating new conversation with payload:', JSON.stringify(payload, null, 2));
     
-    const response = await tavusApi.post('/conversations', payload);
-    
-    console.log('Successfully created conversation:', response.data?.id);
-    res.json(response.data);
+    // First attempt to create conversation
+    try {
+      console.log('Attempting to create new conversation...');
+      const response = await tavusApi.post('/conversations', payload);
+      console.log('Successfully created conversation:', response.data?.id);
+      return res.json(response.data);
+    } catch (error) {
+      // If not a concurrent conversation limit error, rethrow
+      if (error.response?.status !== 400 || 
+          !(error.response?.data?.message?.includes('maximum concurrent conversations') ||
+            error.response?.data?.details?.message?.includes('maximum concurrent conversations'))) {
+        throw error;
+      }
+      
+      console.log('Hit concurrent conversation limit, attempting to clean up old conversations...');
+      
+      // Get all conversations
+      const response = await tavusApi.get('/conversations');
+      let conversations = [];
+      
+      // Handle different response formats
+      if (Array.isArray(response.data)) {
+        conversations = response.data;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        conversations = response.data.data;
+      }
+      
+      console.log(`Found ${conversations.length} total conversations`);
+      
+      // Find and end the oldest active conversation
+      const activeConversations = conversations
+        .filter(conv => conv.status === 'active')
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      
+      if (activeConversations.length === 0) {
+        console.log('No active conversations found to end');
+        throw new Error('No active conversations to end');
+      }
+      
+      const oldestActive = activeConversations[0];
+      const conversationId = oldestActive.conversation_id || oldestActive.id;
+      
+      if (!conversationId) {
+        throw new Error('No valid conversation ID found');
+      }
+      
+      console.log(`Ending oldest active conversation: ${conversationId}`);
+      await tavusApi.post(`/conversations/${conversationId}/end`);
+      console.log(`Successfully ended conversation: ${conversationId}`);
+      
+      // Wait for the conversation to fully end
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Retry creating the conversation
+      console.log('Retrying conversation creation after cleanup...');
+      const retryResponse = await tavusApi.post('/conversations', payload);
+      console.log('Successfully created new conversation after cleanup');
+      return res.json(retryResponse.data);
+    }
   } catch (error) {
-    console.error('Error creating conversation:', {
+    console.error('Error in conversation creation:', {
       message: error.message,
       status: error.response?.status,
-      statusText: error.response?.statusText,
       data: error.response?.data,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
-
-    // Check for specific error conditions
-    if (error.response?.status === 402) {
-      return res.status(402).json({
-        message: 'API quota exceeded. Please check your Tavus API subscription.',
-        code: 'QUOTA_EXCEEDED',
-        details: error.response?.data
-      });
-    }
-
-    // For other errors
-    res.status(error.response?.status || 500).json({
-      message: error.response?.data?.message || 'Failed to create conversation',
-      code: error.response?.data?.code || 'INTERNAL_SERVER_ERROR',
-      details: process.env.NODE_ENV === 'development' ? error.response?.data : undefined
+    
+    const statusCode = error.response?.status || 500;
+    const errorMessage = error.response?.data?.message || 'Failed to create conversation';
+    
+    res.status(statusCode).json({
+      message: errorMessage,
+      code: 'CONVERSATION_CREATION_ERROR',
+      details: error.response?.data || error.message
     });
   }
 });
