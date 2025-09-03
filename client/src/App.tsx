@@ -11,7 +11,8 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import Resources from "./pages/Resources";
+import Resources from './pages/Resources';
+
 import "./i18n";
 
 
