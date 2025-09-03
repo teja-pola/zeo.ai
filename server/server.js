@@ -75,7 +75,7 @@ app.use('/api/signup', signupRoutes);
 app.use('/api/counsellor', counsellorRoutes);
 
 // Get replica details
-app.get('/api/tavus/replica', apiLimiter, authenticate, async (req, res) => {
+app.get('/api/tavus/replica', authenticate, async (req, res) => {
   try {
     const response = await tavusApi.get(`/replicas/${config.replicaId}`);
     res.json(response.data);
@@ -89,7 +89,7 @@ app.get('/api/tavus/replica', apiLimiter, authenticate, async (req, res) => {
 });
 
 // Create conversation
-app.post('/api/tavus/conversation', apiLimiter, authenticate, async (req, res) => {
+app.post('/api/tavus/conversation', authenticate, async (req, res) => {
   try {
     const { personaId } = req.body;
     const payload = { replica_id: config.replicaId };
@@ -100,13 +100,35 @@ app.post('/api/tavus/conversation', apiLimiter, authenticate, async (req, res) =
       payload.persona_id = config.defaultPersonaId;
     }
 
+    console.log('Creating new conversation with payload:', JSON.stringify(payload, null, 2));
+    
     const response = await tavusApi.post('/conversations', payload);
+    
+    console.log('Successfully created conversation:', response.data?.id);
     res.json(response.data);
   } catch (error) {
-    console.error('Error creating conversation:', error.message);
+    console.error('Error creating conversation:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+
+    // Check for specific error conditions
+    if (error.response?.status === 402) {
+      return res.status(402).json({
+        message: 'API quota exceeded. Please check your Tavus API subscription.',
+        code: 'QUOTA_EXCEEDED',
+        details: error.response?.data
+      });
+    }
+
+    // For other errors
     res.status(error.response?.status || 500).json({
       message: error.response?.data?.message || 'Failed to create conversation',
-      details: error.response?.data
+      code: error.response?.data?.code || 'INTERNAL_SERVER_ERROR',
+      details: process.env.NODE_ENV === 'development' ? error.response?.data : undefined
     });
   }
 });
