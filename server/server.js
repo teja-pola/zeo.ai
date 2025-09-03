@@ -51,14 +51,46 @@ const authenticate = (req, res, next) => {
   next();
 };
 
-// Tavus API client
+// Tavus API client with increased timeout and better error handling
 const tavusApi = axios.create({
   baseURL: config.tavusApiUrl,
+  timeout: 120000, // Increased to 2 minutes for Tavus API
   headers: {
     'Content-Type': 'application/json',
     'x-api-key': config.tavusApiKey
   }
 });
+
+// Add request interceptor for logging
+const requestInterceptor = tavusApi.interceptors.request.use(
+  config => {
+    console.log(`Tavus API Request: ${config.method.toUpperCase()} ${config.url}`);
+    return config;
+  },
+  error => {
+    console.error('Tavus API Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for better error handling
+const responseInterceptor = tavusApi.interceptors.response.use(
+  response => response,
+  async error => {
+    const originalRequest = error.config;
+    
+    // Log the error
+    console.error('Tavus API Error:', {
+      url: originalRequest?.url,
+      method: originalRequest?.method,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+    
+    return Promise.reject(error);
+  }
+);
 
 // Import routes
 const loginRoutes = require('./routes/login');
@@ -73,6 +105,40 @@ app.get('/api/health', (req, res) => {
 app.use('/api/login', loginRoutes);
 app.use('/api/signup', signupRoutes);
 app.use('/api/counsellor', counsellorRoutes);
+
+// End conversation endpoint
+app.post('/api/tavus/conversations/:id/end', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await tavusApi.post(`/conversations/${id}/end`);
+    
+    // Clear the active conversation if it matches the one being ended
+    if (activeConversation && activeConversation.id === id) {
+      console.log('Cleared active conversation:', id);
+      activeConversation = null;
+    }
+    
+    res.json({ 
+      success: true,
+      message: 'Conversation ended successfully'
+    });
+  } catch (error) {
+    console.error('Error ending conversation:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to end conversation',
+      details: error.message 
+    });
+  }
+});
+
+// Get active conversation
+app.get('/api/tavus/conversation/active', authenticate, async (req, res) => {
+  res.json({ 
+    active: !!activeConversation,
+    conversation: activeConversation 
+  });
+});
 
 // Get replica details
 app.get('/api/tavus/replica', authenticate, async (req, res) => {
@@ -154,10 +220,50 @@ app.post('/api/tavus/conversations/:conversationId/end', authenticate, async (re
 });
 
 // Create conversation with automatic cleanup if needed
+// In-memory store// Store active conversations with a maximum of 1 active conversation
+let activeConversation = null;
+const activeConversations = new Map();
+const MAX_CONCURRENT_CONVERSATIONS = 1;
+const MAX_CONVERSATIONS = 5; // Maximum concurrent conversations
+
+// Clean up old conversations
+const cleanupOldConversations = async () => {
+  try {
+    if (activeConversation) return;
+    if (activeConversations.size <= MAX_CONVERSATIONS) return;
+    
+    console.log(`Hit concurrent conversation limit (${activeConversations.size}), cleaning up...`);
+    
+    // Sort conversations by last activity time
+    const sorted = Array.from(activeConversations.entries())
+      .sort((a, b) => a[1].lastActivity - b[1].lastActivity);
+    
+    // End the oldest active conversation
+    const [oldestId] = sorted[0];
+    console.log(`Ending oldest active conversation: ${oldestId}`);
+    
+    try {
+      await tavusApi.post(`/conversations/${oldestId}/end`);
+      console.log(`Successfully ended conversation: ${oldestId}`);
+    } catch (err) {
+      console.error(`Error ending conversation ${oldestId}:`, err.message);
+    } finally {
+      activeConversations.delete(oldestId);
+    }
+  } catch (error) {
+    console.error('Error in cleanupOldConversations:', error);
+  }
+};
+
 app.post('/api/tavus/conversation', authenticate, async (req, res) => {
   try {
     const { personaId } = req.body;
     const payload = { replica_id: config.replicaId };
+    
+    // Clean up old conversations if we're at the limit
+    if (activeConversations.size >= MAX_CONVERSATIONS) {
+      await cleanupOldConversations();
+    }
     
     if (personaId) {
       payload.persona_id = personaId;
@@ -167,12 +273,36 @@ app.post('/api/tavus/conversation', authenticate, async (req, res) => {
 
     console.log('Creating new conversation with payload:', JSON.stringify(payload, null, 2));
     
-    // First attempt to create conversation
+    // Check if there's already an active conversation
+    if (activeConversation) {
+      console.log('Found existing active conversation, ending it first...');
+      try {
+        await tavusApi.post(`/conversations/${activeConversation.id}/end`);
+        console.log('Successfully ended previous conversation:', activeConversation.id);
+      } catch (endError) {
+        console.error('Error ending previous conversation:', endError.message);
+        // Continue anyway to start a new one
+      }
+    }
+
     try {
+      console.log('Creating new conversation with payload:', { replica_id: config.replicaId });
       console.log('Attempting to create new conversation...');
       const response = await tavusApi.post('/conversations', payload);
-      console.log('Successfully created conversation:', response.data?.id);
-      return res.json(response.data);
+      const conversation = response.data;
+      
+      // Store the active conversation
+      activeConversation = {
+        id: conversation.id,
+        createdAt: new Date(),
+        lastActivity: Date.now()
+      };
+      
+      console.log('Successfully created conversation:', conversation.id);
+      res.json({
+        ...conversation,
+        isNewConversation: true
+      });
     } catch (error) {
       // If not a concurrent conversation limit error, rethrow
       if (error.response?.status !== 400 || 
@@ -183,42 +313,87 @@ app.post('/api/tavus/conversation', authenticate, async (req, res) => {
       
       console.log('Hit concurrent conversation limit, attempting to clean up old conversations...');
       
-      // Get all conversations
-      const response = await tavusApi.get('/conversations');
-      let conversations = [];
+      // Get all conversations with pagination
+      let allConversations = [];
+      let page = 1;
+      const pageSize = 50;
+      let hasMore = true;
       
-      // Handle different response formats
-      if (Array.isArray(response.data)) {
-        conversations = response.data;
-      } else if (response.data && Array.isArray(response.data.data)) {
-        conversations = response.data.data;
+      while (hasMore) {
+        const response = await tavusApi.get('/conversations', {
+          params: {
+            page,
+            page_size: pageSize,
+            status: 'active' // Only get active conversations
+          }
+        });
+        
+        let pageConversations = [];
+        if (Array.isArray(response.data)) {
+          pageConversations = response.data;
+        } else if (response.data?.data && Array.isArray(response.data.data)) {
+          pageConversations = response.data.data;
+        }
+        
+        allConversations = [...allConversations, ...pageConversations];
+        
+        // If we got fewer conversations than requested, we've reached the end
+        if (pageConversations.length < pageSize) {
+          hasMore = false;
+        } else {
+          page++;
+        }
       }
       
-      console.log(`Found ${conversations.length} total conversations`);
+      console.log(`Found ${allConversations.length} total active conversations`);
       
-      // Find and end the oldest active conversation
-      const activeConversations = conversations
-        .filter(conv => conv.status === 'active')
-        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-      
-      if (activeConversations.length === 0) {
+      if (allConversations.length === 0) {
         console.log('No active conversations found to end');
         throw new Error('No active conversations to end');
       }
       
-      const oldestActive = activeConversations[0];
-      const conversationId = oldestActive.conversation_id || oldestActive.id;
+      // Sort by creation date (oldest first)
+      const sortedConversations = [...allConversations].sort((a, b) => {
+        return new Date(a.created_at || a.createdAt || 0) - new Date(b.created_at || b.createdAt || 0);
+      });
+      
+      // Try to find a conversation that's been inactive for a while
+      const now = Date.now();
+      const oneHourAgo = now - (60 * 60 * 1000); // 1 hour in milliseconds
+      
+      // First try to find an inactive conversation
+      const inactiveConversation = sortedConversations.find(conv => {
+        const lastActivity = conv.last_activity || conv.lastActivity;
+        return lastActivity && new Date(lastActivity).getTime() < oneHourAgo;
+      });
+      
+      // If no inactive conversation found, just take the oldest one
+      const conversationToEnd = inactiveConversation || sortedConversations[0];
+      
+      if (!conversationToEnd) {
+        throw new Error('No conversations available to end');
+      }
+      
+      const conversationId = conversationToEnd.conversation_id || conversationToEnd.id;
       
       if (!conversationId) {
+        console.error('No valid conversation ID found for conversation:', conversationToEnd);
         throw new Error('No valid conversation ID found');
       }
       
-      console.log(`Ending oldest active conversation: ${conversationId}`);
-      await tavusApi.post(`/conversations/${conversationId}/end`);
-      console.log(`Successfully ended conversation: ${conversationId}`);
+      console.log(`Ending conversation (ID: ${conversationId}, Created: ${conversationToEnd.created_at || conversationToEnd.createdAt})`);
       
-      // Wait for the conversation to fully end
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      try {
+        await tavusApi.post(`/conversations/${conversationId}/end`);
+        console.log(`Successfully ended conversation: ${conversationId}`);
+        
+        // Wait for the conversation to fully end
+        console.log('Waiting for conversation to fully terminate...');
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Increased wait time
+      } catch (endError) {
+        console.error(`Failed to end conversation ${conversationId}:`, endError.message);
+        // Continue anyway, as the conversation might already be ending
+      }
       
       // Retry creating the conversation
       console.log('Retrying conversation creation after cleanup...');

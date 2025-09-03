@@ -1,0 +1,130 @@
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import fetch from "node-fetch";
+
+dotenv.config();
+const app = express();
+const allowedOrigins = [
+  'http://localhost:8080',
+  'http://localhost:8081',
+  'http://127.0.0.1:8080',
+  'http://127.0.0.1:8081',
+  'http://192.168.43.252:8080'
+];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.use(express.json());
+
+const API_KEY = process.env.GEMINI_API_KEY;
+const API_VERSION = process.env.GEMINI_API_VERSION || "v1beta"; // e.g., v1beta or v1
+const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-1.5-flash"; // update if you want pro
+
+function mapUpstreamError(statusCode, errorBody) {
+  try {
+    const parsed = typeof errorBody === "string" ? JSON.parse(errorBody) : errorBody;
+    const code = parsed?.error?.code || statusCode;
+    const status = parsed?.error?.status;
+    const message = parsed?.error?.message || "Unknown error";
+
+    if (code === 401 || status === "UNAUTHENTICATED") {
+      return "Authentication failed. Check GEMINI_API_KEY.";
+    }
+    if (code === 403 || status === "PERMISSION_DENIED") {
+      return "Access denied. Ensure your key has access to the model/region.";
+    }
+    if (code === 404 || status === "NOT_FOUND") {
+      return `Model not found or unsupported for ${API_VERSION}. Try a supported model (e.g., ${MODEL_NAME}).`;
+    }
+    if (code === 429 || status === "RESOURCE_EXHAUSTED") {
+      return "Rate limit or quota exceeded. Retry later or review quota.";
+    }
+    if (code >= 500) {
+      return "Upstream service error. Please try again later.";
+    }
+    return message;
+  } catch {
+    return `Upstream error (status ${statusCode}).`;
+  }
+}
+
+app.post("/chat", async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!API_KEY) {
+      console.error("GEMINI_API_KEY is not set");
+      return res.status(500).json({ error: "Server misconfigured: GEMINI_API_KEY missing" });
+    }
+
+    const url = `https://generativelanguage.googleapis.com/${API_VERSION}/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",  // first message acts like system
+            parts: [
+              {
+                text: `You are a digital mental health therapist for university students, created by zeo.ai. Always answer in 2 lines max not more than that. 
+- Role: Provide emotional support, stress management tips, and mental health awareness using real world statistics and facts.  
+- Tone: Empathetic, calm, supportive — like a trusted guide a frined like tone.  
+- Format: Keep answers very short (1–2 sentences max). Always try to use markdown,numbers, percentages, or statistics to make insights more relatable.  
+- Example style: "About 76% of students experience stress, but 40% find relief in regular exercise."  
+- Branding: Always respond as part of zeo.ai’s mission to support student well-being with modern AI-driven care.`
+              }
+            ]
+          },
+          {
+            role: "user",
+            parts: [{ text: message }]
+          }
+        ]
+      }),
+    });
+    
+
+    if (!response.ok) {
+      const contentType = response.headers.get("content-type") || "";
+      const errorPayload = contentType.includes("application/json")
+        ? await response.json()
+        : await response.text();
+      const friendly = mapUpstreamError(response.status, errorPayload);
+      console.error("Upstream error:", response.status, typeof errorPayload === "string" ? errorPayload : JSON.stringify(errorPayload));
+      return res.status(502).json({ error: friendly, status: response.status, details: errorPayload });
+    }
+
+    const data = await response.json();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!reply) {
+      console.warn("No reply in response:", JSON.stringify(data));
+      return res.status(200).json({ reply: "No reply" });
+    }
+
+    res.json({ reply });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+app.get("/health", (req, res) => {
+  res.json({ ok: true, model: MODEL_NAME, apiVersion: API_VERSION });
+});
+
+app.listen(5001, () => console.log("Server running on port 5001"));
