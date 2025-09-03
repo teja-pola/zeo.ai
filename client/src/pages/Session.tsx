@@ -1,10 +1,11 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, AlertCircle, Loader2, Mic, MicOff, Video, VideoOff, MessageSquare, Settings, PhoneOff } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Loader2, Mic, MicOff, Video, VideoOff, MessageSquare, Settings, Phone, PhoneOff } from 'lucide-react';
 import { useTavus } from '@/contexts/TavusContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 const fadeIn = {
   hidden: { opacity: 0 },
@@ -20,13 +21,20 @@ export default function Session() {
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
   const conversationUrl = searchParams.get('url');
-  const { createConversation } = useTavus();
+  const { 
+    createConversation, 
+    endCurrentConversation, 
+    connectionStatus,
+    activeConversation
+  } = useTavus();
+  
   const [loading, setLoading] = useState(!conversationUrl);
   const [error, setError] = useState<string | null>(null);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [isEnding, setIsEnding] = useState(false);
 
   useEffect(() => {
     const initConversation = async () => {
@@ -47,10 +55,41 @@ export default function Session() {
     initConversation();
   }, [conversationUrl, createConversation, navigate]);
 
-  const handleEndSession = () => {
-    // Add any cleanup logic here
-    navigate('/');
-  };
+  const handleEndSession = useCallback(async () => {
+    try {
+      setIsEnding(true);
+      await endCurrentConversation();
+      toast.success('Session ended successfully');
+      navigate('/');
+    } catch (error) {
+      console.error('Error ending session:', error);
+      toast.error('Failed to end session. Please try again.');
+    } finally {
+      setIsEnding(false);
+    }
+  }, [endCurrentConversation, navigate]);
+  
+  // Handle browser tab/window close
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (connectionStatus === 'connected') {
+        e.preventDefault();
+        // Chrome requires returnValue to be set
+        e.returnValue = '';
+        return '';
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // End session when component unmounts
+      if (connectionStatus === 'connected') {
+        endCurrentConversation().catch(console.error);
+      }
+    };
+  }, [connectionStatus, endCurrentConversation]);
 
   if (loading) {
     return (
@@ -135,10 +174,36 @@ export default function Session() {
             <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
             Back to Home
           </Button>
-          
-          <div className="flex items-center space-x-2">
-            <div className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse"></div>
-            <span className="text-sm text-muted-foreground">Live</span>
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <div className={`h-2.5 w-2.5 rounded-full ${
+                connectionStatus === 'connected' ? 'bg-green-500' : 
+                connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
+              } animate-pulse`}></div>
+              <span className="text-sm text-muted-foreground">
+                {connectionStatus === 'connected' ? 'Live' : 
+                 connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
+              </span>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleEndSession}
+              disabled={isEnding}
+              className="flex items-center space-x-1 text-red-500 hover:text-red-600 hover:bg-red-50"
+            >
+              {isEnding ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                  <span>Ending...</span>
+                </>
+              ) : (
+                <>
+                  <PhoneOff className="w-3.5 h-3.5 mr-1" />
+                  <span>End Session</span>
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </header>
@@ -161,41 +226,6 @@ export default function Session() {
             {/* Overlay Controls */}
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
               <div className="flex justify-center space-x-4">
-                <Button 
-                  variant={isMicOn ? "secondary" : "destructive"} 
-                  size="icon"
-                  onClick={() => setIsMicOn(!isMicOn)}
-                  className="rounded-full w-12 h-12"
-                >
-                  {isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-                </Button>
-                
-                <Button 
-                  variant={isVideoOn ? "secondary" : "destructive"} 
-                  size="icon"
-                  onClick={() => setIsVideoOn(!isVideoOn)}
-                  className="rounded-full w-12 h-12"
-                >
-                  {isVideoOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
-                </Button>
-                
-                <Button 
-                  variant="secondary" 
-                  size="icon"
-                  onClick={() => setShowChat(!showChat)}
-                  className={`rounded-full w-12 h-12 ${showChat ? 'bg-zeo-primary/20 text-zeo-primary' : ''}`}
-                >
-                  <MessageSquare className="w-5 h-5" />
-                </Button>
-                
-                <Button 
-                  variant="secondary" 
-                  size="icon"
-                  onClick={() => setShowSettings(!showSettings)}
-                  className={`rounded-full w-12 h-12 ${showSettings ? 'bg-zeo-primary/20 text-zeo-primary' : ''}`}
-                >
-                  <Settings className="w-5 h-5" />
-                </Button>
                 
                 <Button 
                   variant="destructive" 

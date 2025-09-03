@@ -23,6 +23,7 @@ import Resources from "./pages/Resources";
 import Community from "./pages/Community";
 import Chats from "./pages/Chats";
 import "./i18n";
+import ChatWidget from "./components/ChatWidget";
 
 
 
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
+          <ChatWidget />
         </TavusProvider>
       </BrowserRouter>
     </TooltipProvider>

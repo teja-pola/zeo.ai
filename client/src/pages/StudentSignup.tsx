@@ -9,7 +9,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ArrowLeft } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
 const StudentSignup = () => {
@@ -33,7 +33,6 @@ const StudentSignup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Basic validation
     if (password !== confirmPassword) {
       toast({
         title: "Error",
@@ -55,7 +54,6 @@ const StudentSignup = () => {
     setLoading(true);
     
     try {
-      // Prepare data for submission
       const formData = {
         fullName,
         email,
@@ -70,7 +68,6 @@ const StudentSignup = () => {
         consent
       };
       
-      // Send data to backend
       const response = await fetch('http://localhost:3001/api/signup/student', {
         method: 'POST',
         headers: {
@@ -82,7 +79,6 @@ const StudentSignup = () => {
       const data = await response.json();
       
       if (response.ok) {
-        // Store user data in localStorage for dashboard access
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('userType', 'student');
         localStorage.setItem('token', data.token);
@@ -91,7 +87,6 @@ const StudentSignup = () => {
           title: "Success",
           description: "Student account created successfully!",
         });
-        // Navigate to dashboard
         navigate("/dashboard");
       } else {
         toast({
@@ -113,63 +108,57 @@ const StudentSignup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Background elements */}
-      <div className="absolute inset-0 hidden sm:block">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-zeo-primary-glow/20"
-            style={{
-              width: `${Math.random() * 10 + 2}px`,
-              height: `${Math.random() * 10 + 2}px`,
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animation: `float ${Math.random() * 10 + 5}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 5}s`
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Glass morphism card */}
-      <div className="glass-strong glow-soft rounded-3xl p-6 sm:p-8 w-full max-w-2xl z-10 backdrop-blur-xl shadow-2xl border border-white/20 relative my-4 sm:my-0">
+    <div className="h-screen w-full flex items-center justify-center relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute bg-gradient-to-br from-zeo-primary to-[#1a1e23] inset-0 hidden sm:block"></div>
+      <button 
+            onClick={() => navigate(-1)}
+            className="absolute top-6 left-6 z-20 flex items-center text-green-100 hover:text-white transition-colors text-base font-semibold drop-shadow"
+            style={{backdropFilter:'blur(8px)'}}
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back
+          </button>
+      {/* Card */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-2xl z-10 backdrop-blur-xl shadow-2xl border border-white/20 relative flex flex-col h-[90vh]">
         {/* Decorative elements */}
         <div className="absolute -top-4 -left-4 w-24 h-24 rounded-full bg-zeo-primary-glow/30 blur-xl hidden sm:block"></div>
         <div className="absolute -bottom-4 -right-4 w-32 h-32 rounded-full bg-zeo-secondary-glow/30 blur-xl hidden sm:block"></div>
         
-        <div className="relative z-10">
-          <div className="text-center mb-6 sm:mb-8">
+        <div className="relative z-10 flex flex-col h-full">
+          {/* Header */}
+          <div className="text-center mb-4 sm:mb-6 flex-shrink-0">
             <h1 className="text-2xl sm:text-3xl font-bold gradient-text mb-2">Student Registration</h1>
             <p className="text-foreground/80 text-sm sm:text-base">Join our platform to get support</p>
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-            {/* Personal Information Section */}
+          {/* Scrollable form */}
+          <form 
+            onSubmit={handleSubmit} 
+            className="flex-1 overflow-y-auto pr-2 space-y-4 sm:space-y-6"
+          >
+            {/* Personal Information */}
             <div className="border-b border-zeo-primary/20 pb-4">
               <h2 className="text-lg font-semibold mb-4 text-zeo-primary">Personal Information</h2>
-              
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-foreground">Full Name *</Label>
+                <Label htmlFor="fullName">Full Name *</Label>
                 <Input
                   id="fullName"
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
                   placeholder="Enter your full name"
                   required
                 />
               </div>
               
               <div className="space-y-2 mt-4">
-                <Label htmlFor="email" className="text-foreground">Email Address (University Email Preferred) *</Label>
+                <Label htmlFor="email">Email Address *</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
                   placeholder="Enter your university email"
                   required
                 />
@@ -177,26 +166,23 @@ const StudentSignup = () => {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-foreground">Password *</Label>
+                  <Label htmlFor="password">Password *</Label>
                   <Input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
                     placeholder="Create a password"
                     required
                   />
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-foreground">Confirm Password *</Label>
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
                     placeholder="Confirm your password"
                     required
                   />
@@ -204,22 +190,21 @@ const StudentSignup = () => {
               </div>
               
               <div className="space-y-2 mt-4">
-                <Label htmlFor="phone" className="text-foreground">Phone Number (optional)</Label>
+                <Label htmlFor="phone">Phone Number (optional)</Label>
                 <Input
                   id="phone"
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
                   placeholder="Enter your phone number"
                 />
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="gender" className="text-foreground">Gender (optional)</Label>
+                  <Label htmlFor="gender">Gender</Label>
                   <Select onValueChange={setGender} value={gender}>
-                    <SelectTrigger className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50">
+                    <SelectTrigger>
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
@@ -230,15 +215,14 @@ const StudentSignup = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
                 <div className="space-y-2">
-                  <Label className="text-foreground">Date of Birth / Age</Label>
+                  <Label>Date of Birth</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant={"outline"}
                         className={cn(
-                          "w-full justify-start text-left font-normal glass border-0",
+                          "w-full justify-start text-left font-normal",
                           !dateOfBirth && "text-muted-foreground"
                         )}
                       >
@@ -259,40 +243,35 @@ const StudentSignup = () => {
               </div>
             </div>
             
-            {/* Academic Information Section */}
+            {/* Academic Info */}
             <div className="border-b border-zeo-primary/20 pb-4">
               <h2 className="text-lg font-semibold mb-4 text-zeo-primary">Academic Information</h2>
-              
               <div className="space-y-2">
-                <Label htmlFor="university" className="text-foreground">University / College Name *</Label>
+                <Label htmlFor="university">University *</Label>
                 <Input
                   id="university"
                   type="text"
                   value={university}
                   onChange={(e) => setUniversity(e.target.value)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
                   placeholder="Enter your university/college name"
                   required
                 />
               </div>
-              
               <div className="space-y-2 mt-4">
-                <Label htmlFor="department" className="text-foreground">Department / Faculty *</Label>
+                <Label htmlFor="department">Department *</Label>
                 <Input
                   id="department"
                   type="text"
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
                   placeholder="Enter your department/faculty"
                   required
                 />
               </div>
-              
               <div className="space-y-2 mt-4">
-                <Label htmlFor="yearOfStudy" className="text-foreground">Year of Study *</Label>
+                <Label htmlFor="yearOfStudy">Year of Study *</Label>
                 <Select onValueChange={setYearOfStudy} value={yearOfStudy}>
-                  <SelectTrigger className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select your year of study" />
                   </SelectTrigger>
                   <SelectContent>
@@ -306,11 +285,10 @@ const StudentSignup = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
               <div className="space-y-2 mt-4">
-                <Label htmlFor="preferredLanguage" className="text-foreground">Preferred Language *</Label>
+                <Label htmlFor="preferredLanguage">Preferred Language *</Label>
                 <Select onValueChange={setPreferredLanguage} value={preferredLanguage}>
-                  <SelectTrigger className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select your preferred language" />
                   </SelectTrigger>
                   <SelectContent>
@@ -326,10 +304,9 @@ const StudentSignup = () => {
               </div>
             </div>
             
-            {/* Consent Section */}
+            {/* Consent */}
             <div className="border-b border-zeo-primary/20 pb-4">
               <h2 className="text-lg font-semibold mb-4 text-zeo-primary">Consent</h2>
-              
               <div className="flex items-start space-x-2">
                 <Checkbox
                   id="consent"
@@ -337,27 +314,30 @@ const StudentSignup = () => {
                   onCheckedChange={(checked) => setConsent(checked as boolean)}
                   className="mt-1"
                 />
-                <Label htmlFor="consent" className="text-foreground text-sm">
+                <Label htmlFor="consent" className="text-sm">
                   I agree to the privacy policy and terms of service *
                 </Label>
               </div>
             </div>
-            
-            <Button
-              type="submit"
-              className="w-full glass bg-zeo-primary hover:bg-zeo-primary/80 text-zeo-primary-foreground border-0 transition-all duration-300 hover:scale-[1.02] hover:glow"
-              disabled={!consent || loading}
-            >
-              {loading ? "Creating Account..." : "Create Student Account"}
-            </Button>
+
+            {/* Sticky button */}
+            <div className="sticky bottom-0 bg-white pt-4">
+              <Button
+                type="submit"
+                className="w-full bg-zeo-primary hover:bg-zeo-primary/80 text-white transition-all"
+                disabled={!consent || loading}
+              >
+                {loading ? "Creating Account..." : "Create Student Account"}
+              </Button>
+            </div>
           </form>
           
-          <div className="mt-4 sm:mt-6 text-center">
+          <div className="mt-4 sm:mt-6 text-center flex-shrink-0">
             <p className="text-xs sm:text-sm text-foreground/80">
               Already have an account?{" "}
               <Link 
                 to="/login/student" 
-                className="text-zeo-primary font-medium hover:underline transition-all duration-300 hover:text-zeo-primary/80"
+                className="text-zeo-primary font-medium hover:underline"
               >
                 Sign In
               </Link>

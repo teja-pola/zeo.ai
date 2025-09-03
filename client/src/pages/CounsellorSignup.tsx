@@ -15,7 +15,7 @@ import { toast } from "@/components/ui/use-toast";
 
 const CounsellorSignup = () => {
   const navigate = useNavigate();
-  
+
   // Form state
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -34,11 +34,10 @@ const CounsellorSignup = () => {
   const [documents, setDocuments] = useState<FileList | null>(null);
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Basic validation
+
     if (password !== confirmPassword) {
       toast({
         title: "Error",
@@ -47,7 +46,7 @@ const CounsellorSignup = () => {
       });
       return;
     }
-    
+
     if (!consent) {
       toast({
         title: "Error",
@@ -56,11 +55,10 @@ const CounsellorSignup = () => {
       });
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
-      // Prepare data for submission
       const formData = {
         fullName,
         email,
@@ -75,31 +73,26 @@ const CounsellorSignup = () => {
         languages,
         affiliation,
         availability,
-        consent
+        consent,
       };
-      
-      // Send data to backend
-      const response = await fetch('http://localhost:3001/api/signup/counsellor', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+
+      const response = await fetch("http://localhost:3001/api/signup/counsellor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
-        // Store user data in localStorage for dashboard access
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('userType', 'counsellor');
-        localStorage.setItem('token', data.token);
-        
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("userType", "counsellor");
+        localStorage.setItem("token", data.token);
+
         toast({
           title: "Success",
           description: "Counsellor account created successfully!",
         });
-        // Navigate to dashboard
         navigate("/dashboard");
       } else {
         toast({
@@ -121,42 +114,28 @@ const CounsellorSignup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Background elements */}
-      <div className="absolute inset-0 hidden sm:block">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-zeo-primary-glow/20"
-            style={{
-              width: `${Math.random() * 10 + 2}px`,
-              height: `${Math.random() * 10 + 2}px`,
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animation: `float ${Math.random() * 10 + 5}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 5}s`
-            }}
-          />
-        ))}
-      </div>
-
+    <div className="h-screen w-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-zeo-primary to-[#1a1e23]">
       {/* Glass morphism card */}
-      <div className="glass-strong glow-soft rounded-3xl p-6 sm:p-8 w-full max-w-2xl z-10 backdrop-blur-xl shadow-2xl border border-white/20 relative my-4 sm:my-0">
+      <div className="bg-white rounded-3xl w-full max-w-2xl h-[90vh] flex flex-col z-10 backdrop-blur-xl shadow-2xl border border-white/20 relative">
         {/* Decorative elements */}
         <div className="absolute -top-4 -left-4 w-24 h-24 rounded-full bg-zeo-primary-glow/30 blur-xl hidden sm:block"></div>
         <div className="absolute -bottom-4 -right-4 w-32 h-32 rounded-full bg-zeo-secondary-glow/30 blur-xl hidden sm:block"></div>
-        
-        <div className="relative z-10">
-          <div className="text-center mb-6 sm:mb-8">
+
+        {/* Header */}
+        <div className="p-6 sm:p-8 shrink-0">
+          <div className="text-center">
             <h1 className="text-2xl sm:text-3xl font-bold gradient-text mb-2">Counsellor Registration</h1>
             <p className="text-foreground/80 text-sm sm:text-base">Join our platform to help students</p>
           </div>
-          
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-            {/* Personal Information Section */}
+        </div>
+
+        {/* Scrollable Form */}
+        <div className="flex-1 overflow-y-auto px-6 sm:px-8">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 pb-32">
+            {/* === Personal Information === */}
             <div className="border-b border-zeo-primary/20 pb-4">
               <h2 className="text-lg font-semibold mb-4 text-zeo-primary">Personal Information</h2>
-              
+              {/* Full Name */}
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="text-foreground">Full Name *</Label>
                 <Input
@@ -164,12 +143,12 @@ const CounsellorSignup = () => {
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
+                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50"
                   placeholder="Enter your full name"
                   required
                 />
               </div>
-              
+              {/* Email */}
               <div className="space-y-2 mt-4">
                 <Label htmlFor="email" className="text-foreground">Email Address *</Label>
                 <Input
@@ -177,59 +156,33 @@ const CounsellorSignup = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
+                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50"
                   placeholder="Enter your email"
                   required
                 />
               </div>
-              
+              {/* Passwords */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-foreground">Password *</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
-                    placeholder="Create a password"
-                    required
-                  />
+                  <Label htmlFor="password">Password *</Label>
+                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-foreground">Confirm Password *</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
-                    placeholder="Confirm your password"
-                    required
-                  />
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                  <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
                 </div>
               </div>
-              
+              {/* Phone */}
               <div className="space-y-2 mt-4">
-                <Label htmlFor="phone" className="text-foreground">Phone Number / Contact Info</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
-                  placeholder="Enter your phone number"
-                />
+                <Label htmlFor="phone">Phone Number / Contact Info</Label>
+                <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
-              
+              {/* Gender & DOB */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="gender" className="text-foreground">Gender (optional)</Label>
+                  <Label>Gender (optional)</Label>
                   <Select onValueChange={setGender} value={gender}>
-                    <SelectTrigger className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50">
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="male">Male</SelectItem>
                       <SelectItem value="female">Female</SelectItem>
@@ -238,45 +191,30 @@ const CounsellorSignup = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
                 <div className="space-y-2">
-                  <Label className="text-foreground">Date of Birth</Label>
+                  <Label>Date of Birth</Label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal glass border-0",
-                          !dateOfBirth && "text-muted-foreground"
-                        )}
-                      >
+                      <Button variant="outline" className="w-full justify-start glass">
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {dateOfBirth ? format(dateOfBirth, "PPP") : <span>Pick a date</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={dateOfBirth}
-                        onSelect={setDateOfBirth}
-                        initialFocus
-                      />
+                      <Calendar mode="single" selected={dateOfBirth} onSelect={setDateOfBirth} initialFocus />
                     </PopoverContent>
                   </Popover>
                 </div>
               </div>
             </div>
-            
-            {/* Professional Information Section */}
+
+            {/* === Professional Information === */}
             <div className="border-b border-zeo-primary/20 pb-4">
               <h2 className="text-lg font-semibold mb-4 text-zeo-primary">Professional Information</h2>
-              
               <div className="space-y-2">
-                <Label htmlFor="professionalTitle" className="text-foreground">Professional Title / Role *</Label>
+                <Label htmlFor="professionalTitle">Professional Title / Role *</Label>
                 <Select onValueChange={setProfessionalTitle} value={professionalTitle}>
-                  <SelectTrigger className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50">
-                    <SelectValue placeholder="Select your role" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select your role" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="psychologist">Psychologist</SelectItem>
                     <SelectItem value="counselor">Counselor</SelectItem>
@@ -286,128 +224,64 @@ const CounsellorSignup = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
-              <div className="space-y-2 mt-4">
-                <Label htmlFor="qualifications" className="text-foreground">Qualifications *</Label>
-                <Textarea
-                  id="qualifications"
-                  value={qualifications}
-                  onChange={(e) => setQualifications(e.target.value)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
-                  placeholder="List your degrees, certifications, licenses"
-                  required
-                />
+              <div className="mt-4 space-y-2">
+                <Label htmlFor="qualifications">Qualifications *</Label>
+                <Textarea id="qualifications" value={qualifications} onChange={(e) => setQualifications(e.target.value)} required />
               </div>
-              
-              <div className="space-y-2 mt-4">
-                <Label htmlFor="yearsOfExperience" className="text-foreground">Years of Experience *</Label>
-                <Input
-                  id="yearsOfExperience"
-                  type="number"
-                  value={yearsOfExperience}
-                  onChange={(e) => setYearsOfExperience(e.target.value)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
-                  placeholder="Enter years of experience"
-                  required
-                />
+              <div className="mt-4 space-y-2">
+                <Label htmlFor="yearsOfExperience">Years of Experience *</Label>
+                <Input id="yearsOfExperience" type="number" value={yearsOfExperience} onChange={(e) => setYearsOfExperience(e.target.value)} required />
               </div>
-              
-              <div className="space-y-2 mt-4">
-                <Label htmlFor="specializations" className="text-foreground">Specialization Areas *</Label>
-                <Textarea
-                  id="specializations"
-                  value={specializations}
-                  onChange={(e) => setSpecializations(e.target.value)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
-                  placeholder="e.g., stress management, depression, academic counseling"
-                  required
-                />
+              <div className="mt-4 space-y-2">
+                <Label htmlFor="specializations">Specialization Areas *</Label>
+                <Textarea id="specializations" value={specializations} onChange={(e) => setSpecializations(e.target.value)} required />
               </div>
-              
-              <div className="space-y-2 mt-4">
-                <Label htmlFor="languages" className="text-foreground">Languages Spoken *</Label>
-                <Input
-                  id="languages"
-                  type="text"
-                  value={languages}
-                  onChange={(e) => setLanguages(e.target.value)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
-                  placeholder="List languages you speak (comma separated)"
-                  required
-                />
+              <div className="mt-4 space-y-2">
+                <Label htmlFor="languages">Languages Spoken *</Label>
+                <Input id="languages" type="text" value={languages} onChange={(e) => setLanguages(e.target.value)} required />
               </div>
-              
-              <div className="space-y-2 mt-4">
-                <Label htmlFor="affiliation" className="text-foreground">Affiliation / Institution</Label>
-                <Input
-                  id="affiliation"
-                  type="text"
-                  value={affiliation}
-                  onChange={(e) => setAffiliation(e.target.value)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
-                  placeholder="University, clinic, or independent"
-                />
+              <div className="mt-4 space-y-2">
+                <Label htmlFor="affiliation">Affiliation / Institution</Label>
+                <Input id="affiliation" type="text" value={affiliation} onChange={(e) => setAffiliation(e.target.value)} />
               </div>
-              
-              <div className="space-y-2 mt-4">
-                <Label htmlFor="availability" className="text-foreground">Availability Schedule</Label>
-                <Textarea
-                  id="availability"
-                  value={availability}
-                  onChange={(e) => setAvailability(e.target.value)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
-                  placeholder="Time slots you can offer support"
-                />
+              <div className="mt-4 space-y-2">
+                <Label htmlFor="availability">Availability Schedule</Label>
+                <Textarea id="availability" value={availability} onChange={(e) => setAvailability(e.target.value)} />
               </div>
             </div>
-            
-            {/* Documents and Consent Section */}
+
+            {/* === Documents and Consent === */}
             <div className="border-b border-zeo-primary/20 pb-4">
               <h2 className="text-lg font-semibold mb-4 text-zeo-primary">Documents and Consent</h2>
-              
               <div className="space-y-2">
-                <Label htmlFor="documents" className="text-foreground">Verification Documents Upload</Label>
-                <Input
-                  id="documents"
-                  type="file"
-                  onChange={(e) => setDocuments(e.target.files)}
-                  className="glass border-0 focus:ring-2 focus:ring-zeo-primary/50 focus:ring-offset-0 focus:ring-offset-transparent"
-                  multiple
-                />
-                <p className="text-xs text-foreground/60">
-                  Upload degree, license, and ID documents
-                </p>
+                <Label htmlFor="documents">Verification Documents Upload</Label>
+                <Input id="documents" type="file" onChange={(e) => setDocuments(e.target.files)} multiple />
+                <p className="text-xs text-foreground/60">Upload degree, license, and ID documents</p>
               </div>
-              
               <div className="flex items-start mt-4 space-x-2">
-                <Checkbox
-                  id="consent"
-                  checked={consent}
-                  onCheckedChange={(checked) => setConsent(checked as boolean)}
-                  className="mt-1"
-                />
+                <Checkbox id="consent" checked={consent} onCheckedChange={(checked) => setConsent(checked as boolean)} className="mt-1" />
                 <Label htmlFor="consent" className="text-foreground text-sm">
                   I agree to the privacy policy and code of ethics *
                 </Label>
               </div>
             </div>
-            
-            <Button
-              type="submit"
-              className="w-full glass bg-zeo-primary hover:bg-zeo-primary/80 text-zeo-primary-foreground border-0 transition-all duration-300 hover:scale-[1.02] hover:glow"
-              disabled={!consent || loading}
-            >
-              {loading ? "Creating Account..." : "Create Counsellor Account"}
-            </Button>
           </form>
-          
-          <div className="mt-4 sm:mt-6 text-center">
+        </div>
+
+        {/* Sticky Bottom Actions */}
+        <div className="p-6 sm:p-8 border-t border-white/20 bg-white/70 backdrop-blur-md sticky bottom-0 rounded-b-3xl">
+          <Button
+            type="submit"
+            form="counsellor-form"
+            className="w-full glass bg-zeo-primary hover:bg-zeo-primary/80"
+            disabled={!consent || loading}
+          >
+            {loading ? "Creating Account..." : "Create Counsellor Account"}
+          </Button>
+          <div className="mt-4 text-center">
             <p className="text-xs sm:text-sm text-foreground/80">
               Already have an account?{" "}
-              <Link 
-                to="/login/counsellor" 
-                className="text-zeo-primary font-medium hover:underline transition-all duration-300 hover:text-zeo-primary/80"
-              >
+              <Link to="/login/counsellor" className="text-zeo-primary font-medium hover:underline">
                 Sign In
               </Link>
             </p>

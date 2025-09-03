@@ -212,7 +212,7 @@ export default function Landing() {
         {/* ============ NEW SECTIONS START HERE ============ */}
 
        {/* Pricing Section (Bigger Cards) */}
-<motion.div className="mt-32 px-4 max-w-6xl mx-auto  rounded-3xl p-12"
+<motion.div className="mt-32 px-4 max-w-6xl mx-auto  rounded-2xl p-12"
   initial={{ opacity: 0, y: 50 }} 
   whileInView={{ opacity: 1, y: 0 }} 
   viewport={{ once: true }} 
@@ -230,15 +230,15 @@ export default function Landing() {
       { title: "Enterprise", price: "$49/mo", features: ["All Pro Features", "Team Management", "Custom Integrations"] },
     ].map((plan, idx) => (
       <motion.div key={idx} 
-        className="p-10 rounded-3xl bg-[#2F4F28] border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+  className="p-12 rounded-xl bg-[#2F4F28] border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
         initial={{ opacity: 0, y: 20 }} 
         whileInView={{ opacity: 1, y: 0 }} 
         transition={{ delay: idx * 0.1, duration: 0.5 }}
       >
-        <h3 className="text-2xl md:text-3xl font-bold mb-6 text-yellow-400">{plan.title}</h3>
-        <p className="text-3xl md:text-4xl font-extrabold mb-8 text-white">{plan.price}</p>
+  <h3 className="text-3xl md:text-4xl font-bold mb-7 text-yellow-400">{plan.title}</h3>
+  <p className="text-4xl md:text-5xl font-extrabold mb-10 text-white">{plan.price}</p>
         
-        <ul className="mb-8 space-y-4 text-base text-white/90">
+  <ul className="mb-10 space-y-5 text-lg text-white/90">
           {plan.features.map((f, i) => (
             <li key={i} className="flex items-center gap-3">
               <Check className="w-6 h-6 text-yellow-300" /> {f}
@@ -246,7 +246,7 @@ export default function Landing() {
           ))}
         </ul>
 
-        <Button className="w-full bg-yellow-500 hover:bg-yellow-400 text-[#345E2C] py-4 rounded-xl font-semibold text-lg shadow-md hover:shadow-lg transition-all">
+        <Button className="w-full bg-yellow-500 hover:bg-yellow-400 text-[#345E2C] py-3 rounded-xl font-semibold text-base shadow-md hover:shadow-lg transition-all">
           Choose Plan
         </Button>
       </motion.div>

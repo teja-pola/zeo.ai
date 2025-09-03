@@ -20,10 +20,10 @@ import {
 
 const navItems = [
   { name: 'Home', href: '/', icon: Home },
-  { name: 'Community', href: '/community', icon: Users },
+  
   { name: 'Session', href: '/session', icon: Video },
   { name: 'Resources', href: '/resources', icon: BookOpen },
-  { name: 'Profile', href: '/profile', icon: User },
+  
 ];
 
 export default function Navigation() {
@@ -98,13 +98,7 @@ export default function Navigation() {
 
           {/* Login/Logout Buttons */}
           <div className="hidden md:flex items-center gap-2">
-            <Button 
-              className="bg-white/10 text-white hover:bg-white/20 rounded-full px-4 py-2 text-sm font-medium flex items-center"
-              onClick={() => navigate('/login')}
-            >
-              <LogIn className="mr-2 h-4 w-4" />
-              Login
-            </Button>
+            
             <Button 
               className="bg-white text-[#345E2C] hover:bg-gray-100 rounded-full px-4 py-2 text-sm font-medium flex items-center"
               onClick={() => navigate('/role')}

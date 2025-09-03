@@ -1,13 +1,18 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { Replica, ConversationResponse, Conversation } from '@/services/tavusService';
 import { tavusApi } from '@/services/api/tavus';
+import { toast } from 'sonner';
 
 interface TavusContextType {
   replica: Replica | null;
   loading: boolean;
   error: string | null;
+  isConnected: boolean;
+  activeConversation: ConversationResponse | null;
   refreshReplica: () => Promise<void>;
   createConversation: (personaId?: string) => Promise<ConversationResponse>;
+  endCurrentConversation: () => Promise<boolean>;
+  connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
 }
 
 const TavusContext = createContext<TavusContextType | undefined>(undefined);
@@ -16,6 +21,13 @@ export const TavusProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [replica, setReplica] = useState<Replica | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeConversation, setActiveConversation] = useState<ConversationResponse | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<
+    'disconnected' | 'connecting' | 'connected' | 'error'
+  >('disconnected');
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectAttempts = useRef(0);
+  const maxReconnectAttempts = 3;
 
   const fetchReplica = useCallback(async () => {
     try {
@@ -41,14 +53,99 @@ export const TavusProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     });
   }, [fetchReplica]);
 
+  const setupWebSocket = useCallback((conversationId: string) => {
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
+
+    setConnectionStatus('connecting');
+    
+    // In a real implementation, you would get this URL from your server
+    const wsUrl = `wss://api.tavus.io/v1/conversations/${conversationId}/ws`;
+    const ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+      console.log('WebSocket connection established');
+      setConnectionStatus('connected');
+      reconnectAttempts.current = 0;
+    };
+    
+    ws.onclose = (event) => {
+      console.log('WebSocket connection closed:', event);
+      setConnectionStatus('disconnected');
+      
+      // Attempt to reconnect if this wasn't an intentional close
+      if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 10000);
+        reconnectAttempts.current++;
+        
+        console.log(`Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts})...`);
+        setTimeout(() => setupWebSocket(conversationId), delay);
+      }
+    };
+    
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setConnectionStatus('error');
+      toast.error('Connection error. Please try again.');
+    };
+    
+    wsRef.current = ws;
+    
+    // Cleanup function
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
+  }, []);
+
+  const endCurrentConversation = useCallback(async () => {
+    try {
+      setLoading(true);
+      if (activeConversation?.id) {
+        await tavusApi.endConversation(activeConversation.id);
+      }
+      
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      
+      setActiveConversation(null);
+      setConnectionStatus('disconnected');
+      return true;
+    } catch (error) {
+      console.error('Error ending conversation:', error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [activeConversation]);
+
   const createConversation = useCallback(async (personaId?: string) => {
     try {
       setLoading(true);
       setError(null);
+      setConnectionStatus('connecting');
+      
+      // End any existing conversation first
+      if (activeConversation) {
+        await endCurrentConversation();
+      }
       
       try {
-        // First try to create a new conversation
-        return await tavusApi.createConversation(personaId);
+        // Create new conversation
+        const conversation = await tavusApi.createConversation(personaId);
+        setActiveConversation(conversation);
+        
+        // Set up WebSocket connection
+        if (conversation?.id) {
+          setupWebSocket(conversation.id);
+        }
+        
+        return conversation;
       } catch (error) {
         // If we get a concurrent conversation error, clean up old ones and retry
         if (error?.message?.includes('maximum concurrent conversations') || 
@@ -62,6 +159,7 @@ export const TavusProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create conversation';
       setError(errorMessage);
+      setConnectionStatus('error');
       console.error('Error in createConversation:', err);
       throw err;
     } finally {
@@ -74,13 +172,35 @@ export const TavusProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, [fetchReplica]);
 
   // Memoize context value to prevent unnecessary re-renders
+  // Clean up WebSocket on unmount
+  useEffect(() => {
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, []);
+
   const contextValue = React.useMemo(() => ({
     replica,
     loading,
     error,
+    isConnected: connectionStatus === 'connected',
+    activeConversation,
+    connectionStatus,
     refreshReplica,
     createConversation,
-  }), [replica, loading, error, refreshReplica, createConversation]);
+    endCurrentConversation,
+  }), [
+    replica, 
+    loading, 
+    error, 
+    connectionStatus, 
+    activeConversation, 
+    refreshReplica, 
+    createConversation, 
+    endCurrentConversation
+  ]);
 
   return (
     <TavusContext.Provider value={contextValue}>

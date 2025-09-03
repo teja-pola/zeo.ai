@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
-import { API_BASE_URL, FEATURE_FLAGS } from '@/config';
+import { API_BASE_URL, CHAT_API_BASE_URL, FEATURE_FLAGS } from '@/config';
 
 // Create axios instance with base config
 const api: AxiosInstance = axios.create({
@@ -8,7 +8,7 @@ const api: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  timeout: 10000, // 10 seconds
+  timeout: 30000, // Increased to 30 seconds for video session initialization
   withCredentials: FEATURE_FLAGS.ENABLE_AUTH,
 });
 
@@ -18,8 +18,8 @@ api.interceptors.request.use(
     // Add auth token if available
     const token = localStorage.getItem('authToken');
     if (token) {
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers = config.headers || {} as any;
+      (config.headers as any).Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -71,6 +71,12 @@ api.interceptors.response.use(
 );
 
 export { api };
+
+export const chatApi: AxiosInstance = axios.create({
+  baseURL: CHAT_API_BASE_URL,
+  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+  timeout: 15000,
+});
 
 export const setAuthToken = (token: string | null) => {
   if (token) {

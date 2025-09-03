@@ -54,7 +54,7 @@ export default function CounsellorLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#D2E4D3] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zeo-primary to-[#1a1e23] p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
