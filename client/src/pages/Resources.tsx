@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import DashboardSidebar from "@/components/DashboardSidebar";
 
 type ResourceTab = "articles" | "guides" | "videos" | "tools" | "faq";
 
@@ -140,71 +141,41 @@ export default function Resources() {
   ];
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <div className="flex h-screen overflow-hidden">
-        {/* Sidebar */}
-        <div className="hidden md:flex w-64 flex-col border-r bg-card">
-          <div className="p-6 pb-2">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-zeo-primary to-zeo-secondary bg-clip-text text-transparent">
-              Resources
-            </h1>
-            <p className="text-sm text-muted-foreground">Helpful articles, tools & more</p>
+    <div className="min-h-screen bg-gradient-to-br from-zeo-surface via-background to-zeo-surface flex">
+      {/* Sidebar */}
+      <DashboardSidebar />
+      
+      {/* Main Content - 81% width with left margin for sidebar */}
+      <div className="ml-[19%] w-[81%] p-6">
+        <div className="container mx-auto space-y-8">
+          {/* Resource Tabs */}
+          <div className="flex space-x-2 overflow-x-auto pb-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
+                  activeTab === tab.id
+                    ? "bg-zeo-primary text-white"
+                    : "bg-card text-muted-foreground hover:bg-muted/50"
+                }`}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            ))}
           </div>
-          <div className="flex-1 overflow-y-auto">
-            <nav className="space-y-1 p-2">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                    activeTab === tab.id
-                      ? "bg-zeo-primary/10 text-zeo-primary font-medium"
-                      : "text-muted-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  <span>{tab.icon}</span>
-                  <span>{tab.label}</span>
-                  {activeTab === tab.id && (
-                    <ChevronRight className="ml-auto h-4 w-4" />
-                  )}
-                </button>
-              ))}
-            </nav>
-          </div>
-        </div>
 
-        {/* Mobile Header */}
-        <div className="md:hidden bg-card border-b">
-          <div className="p-4">
-            <h1 className="text-xl font-bold">Resources</h1>
-            <div className="flex space-x-2 mt-2 overflow-x-auto pb-2">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-3 py-1.5 text-sm rounded-full whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? "bg-zeo-primary text-white"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 overflow-y-auto">
-          <motion.div
-            key={activeTab + lang}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-            className="p-4 md:p-8 max-w-3xl mx-auto space-y-8"
-          >
+          {/* Main Content */}
+          <div className="overflow-y-auto">
+            <motion.div
+              key={activeTab + lang}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+              className="max-w-4xl mx-auto space-y-8"
+            >
             {/* Header with Language Selector */}
             <div className="flex justify-between items-center">
               <div>
@@ -251,8 +222,9 @@ export default function Resources() {
                   )}
                 </Card>
               ))}
-            </div>
-          </motion.div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </div>
     </div>

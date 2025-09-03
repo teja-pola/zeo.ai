@@ -16,7 +16,7 @@ import {
 
 const navItems = [
   { name: 'Home', href: '/', icon: Home },
-  { name: 'Book Session', href: '/booking', icon: Calendar },
+  
   { name: 'Session', href: '/session', icon: Video },
   { name: 'Resources', href: '/resources', icon: BookOpen },
 ];
@@ -95,7 +95,7 @@ export default function Navigation() {
           <div className="hidden md:block">
             <Button 
               className="bg-white text-[#345E2C] hover:bg-gray-100 rounded-full px-6 py-2 text-sm font-medium flex items-center"
-              onClick={() => navigate('/session')}
+              onClick={() => navigate('/role')}
             >
               Get Started
               <ArrowRight className="ml-2 h-4 w-4" />

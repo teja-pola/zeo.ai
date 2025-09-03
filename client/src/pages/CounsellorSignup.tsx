@@ -400,7 +400,7 @@ const CounsellorSignup = () => {
             <p className="text-xs sm:text-sm text-foreground/80">
               Already have an account?{" "}
               <Link 
-                to="/" 
+                to="/login/counsellor" 
                 className="text-zeo-primary font-medium hover:underline transition-all duration-300 hover:text-zeo-primary/80"
               >
                 Sign In

@@ -14,7 +14,9 @@ const app = express();
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:8080',  // Vite dev server
+  'http://localhost:8081',  // Vite dev server alternative port
   'http://127.0.0.1:8080',  // Alternative localhost
+  'http://127.0.0.1:8081',  // Alternative localhost
   'http://192.168.43.252:8080'  // Local network access
 ];
 
@@ -59,15 +61,18 @@ const tavusApi = axios.create({
 });
 
 // Import routes
+const loginRoutes = require('./routes/login');
 const signupRoutes = require('./routes/signup');
+const counsellorRoutes = require('./routes/counsellor');
 
 // Routes
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Signup routes
+app.use('/api/login', loginRoutes);
 app.use('/api/signup', signupRoutes);
+app.use('/api/counsellor', counsellorRoutes);
 
 // Get replica details
 app.get('/api/tavus/replica', apiLimiter, authenticate, async (req, res) => {

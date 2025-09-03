@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,8 +27,13 @@ import {
   ChevronRight,
   Check,
   Download, 
-  Trash2
+  Trash2,
+  Camera,
+  Upload,
+  Phone,
+  Building
 } from 'lucide-react';
+import DashboardSidebar from '@/components/DashboardSidebar';
 
 type SettingsTab = 'profile' | 'account' | 'notifications' | 'appearance' | 'privacy' | 'help';
 
@@ -39,6 +44,11 @@ type UserProfile = {
   bio: string;
   location: string;
   website: string;
+  role: string;
+  phone?: string;
+  department?: string;
+  languages?: string;
+  isAcceptingNewSessions?: boolean;
 };
 
 type SettingsState = {
@@ -64,16 +74,46 @@ type SettingsState = {
   };
 };
 
+interface User {
+  fullName: string;
+  email: string;
+  universityEmail?: string;
+  professionalEmail?: string;
+  bio?: string;
+  location?: string;
+  website?: string;
+  phone?: string;
+  department?: string;
+  languages?: string;
+}
+
 export default function Settings() {
+  const [user, setUser] = useState<User | null>(null);
+  const [userType, setUserType] = useState<string>('');
+  
+  useEffect(() => {
+    // Get user data from localStorage
+    const userData = localStorage.getItem('user');
+    const userTypeData = localStorage.getItem('userType');
+    
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+    if (userTypeData) {
+      setUserType(userTypeData);
+    }
+  }, []);
+
   const [settings, setSettings] = useState<SettingsState>({
     activeTab: 'profile',
     profile: {
-      name: 'Alex Johnson',
-      email: 'alex.johnson@example.com',
+      name: user?.fullName || 'Enter your full name',
+      email: user?.email || user?.universityEmail || user?.professionalEmail || 'Enter your email',
       avatar: '',
-      bio: 'Mental health advocate and wellness enthusiast',
-      location: 'San Francisco, CA',
-      website: 'alexjohnson.me'
+      bio: user?.bio || 'Tell us about yourself',
+      location: user?.location || 'Enter your location',
+      website: user?.website || 'Enter your website URL',
+      role: userType === 'student' ? 'Student' : userType === 'counsellor' ? 'Counsellor' : 'Not specified'
     },
     notifications: {
       enabled: true,
@@ -105,12 +145,12 @@ export default function Settings() {
     }));
   };
 
-  const handleProfileChange = (key: keyof UserProfile, value: string) => {
+  const handleProfileChange = (field: keyof UserProfile, value: string | boolean) => {
     setSettings(prev => ({
       ...prev,
       profile: {
         ...prev.profile,
-        [key]: value
+        [field]: value
       }
     }));
   };
@@ -128,79 +168,77 @@ export default function Settings() {
     { id: 'help', icon: <HelpCircle className="h-5 w-5" />, label: 'Help & Support' },
   ];
 
+  // Update profile when user data changes
+  useEffect(() => {
+    if (user) {
+      setSettings(prev => ({
+        ...prev,
+        profile: {
+          ...prev.profile,
+          name: user.fullName || 'Enter your full name',
+          email: user.email || user.universityEmail || user.professionalEmail || 'Enter your email',
+          bio: user.bio || 'Tell us about yourself',
+          location: user.location || 'Enter your location', 
+          website: user.website || 'Enter your website URL',
+          role: userType === 'student' ? 'Student' : userType === 'counsellor' ? 'Counsellor' : 'Not specified',
+          phone: user.phone || '',
+          department: user.department || '',
+          languages: user.languages || '',
+          isAcceptingNewSessions: true
+        }
+      }));
+    }
+  }, [user, userType]);
+
   return (
-    <div className="min-h-screen bg-muted/20">
-      <div className="flex h-screen overflow-hidden">
-        {/* Sidebar */}
-        <div className="hidden md:flex w-64 flex-col border-r bg-card">
-          <div className="p-6 pb-2">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-zeo-primary to-zeo-secondary bg-clip-text text-transparent">
-              Settings
-            </h1>
-            <p className="text-sm text-muted-foreground">Manage your account and preferences</p>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto">
-            <nav className="space-y-1 p-2">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                    settings.activeTab === tab.id
-                      ? 'bg-zeo-primary/10 text-zeo-primary font-medium'
-                      : 'text-muted-foreground hover:bg-muted/50'
-                  }`}
-                >
-                  <span className="text-current">{tab.icon}</span>
-                  <span>{tab.label}</span>
-                  {settings.activeTab === tab.id && (
-                    <ChevronRight className="ml-auto h-4 w-4" />
-                  )}
-                </button>
-              ))}
-            </nav>
-          </div>
-          
-          <div className="p-4 border-t">
-            <Button variant="ghost" className="w-full justify-start text-destructive">
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-zeo-surface via-background to-zeo-surface flex">
+      {/* Main Sidebar */}
+      <DashboardSidebar />
+      
+      {/* Settings Sidebar */}
+      <div className="w-[15%] h-screen bg-card border-r flex flex-col fixed left-[19%] top-0">
+        <div className="p-4 pb-2">
+          <h2 className="text-lg font-bold text-gray-800">
+            Settings
+          </h2>
+          <p className="text-xs text-muted-foreground">Manage preferences</p>
         </div>
-
-        {/* Mobile Header */}
-        <div className="md:hidden bg-card border-b">
-          <div className="p-4">
-            <h1 className="text-xl font-bold">Settings</h1>
-            <div className="flex space-x-2 mt-2 overflow-x-auto pb-2">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-3 py-1.5 text-sm rounded-full whitespace-nowrap ${
-                    settings.activeTab === tab.id
-                      ? 'bg-zeo-primary text-white'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
+        
         <div className="flex-1 overflow-y-auto">
+          <nav className="space-y-1 p-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left transition-colors text-sm ${
+                  settings.activeTab === tab.id
+                    ? 'bg-zeo-primary/10 text-zeo-primary font-medium'
+                    : 'text-muted-foreground hover:bg-muted/50'
+                }`}
+              >
+                <span className="text-current">{tab.icon}</span>
+                <span>{tab.label}</span>
+                {settings.activeTab === tab.id && (
+                  <ChevronRight className="ml-auto h-3 w-3" />
+                )}
+              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
+      
+      {/* Main Content - Adjusted for both sidebars */}
+      <div className="ml-[34%] w-[66%] p-6">
+        <div className="container mx-auto space-y-8">
+          {/* Main Content */}
+          <div className="overflow-y-auto">
           <motion.div
             key={settings.activeTab}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
-            className="p-4 md:p-8 max-w-3xl mx-auto"
+            className="p-4 md:p-8 max-w-4xl mx-auto"
           >
             {settings.activeTab === 'profile' && (
               <div className="space-y-8">
@@ -222,11 +260,21 @@ export default function Settings() {
                     </div>
                     
                     <div className="space-y-4">
+                      <div className="space-y-2 mb-6">
+                        <Label className='text-xl'>Role :</Label>
+                        <div className="inline-block">
+                          <span className="inline-block ml-1 bg-zeo-primary/20 text-zeo-primary px-4 py-2 rounded-lg font-medium text-xl border border-zeo-primary/30">
+                            {settings.profile.role}
+                          </span>
+                        </div>
+                      </div>
+                      
                       <div className="space-y-2">
                         <Label>Full Name</Label>
                         <Input 
                           value={settings.profile.name} 
                           onChange={(e) => handleProfileChange('name', e.target.value)}
+                          placeholder="Enter your full name"
                         />
                       </div>
                       
@@ -238,6 +286,7 @@ export default function Settings() {
                               value={settings.profile.email}
                               onChange={(e) => handleProfileChange('email', e.target.value)}
                               className="pl-10"
+                              placeholder="Enter your email"
                             />
                             <Mail className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
                           </div>
@@ -251,35 +300,97 @@ export default function Settings() {
                           onChange={(e) => handleProfileChange('bio', e.target.value)}
                           className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                           rows={3}
+                          placeholder="Tell us about yourself"
                         />
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Location</Label>
-                          <div className="relative">
-                            <Input 
-                              value={settings.profile.location}
-                              onChange={(e) => handleProfileChange('location', e.target.value)}
-                              className="pl-10"
+                      {/* Conditional fields based on user type */}
+                      {userType === 'counsellor' ? (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Phone Number</Label>
+                              <div className="relative">
+                                <Input 
+                                  value={settings.profile.phone || ''}
+                                  onChange={(e) => handleProfileChange('phone', e.target.value)}
+                                  className="pl-10"
+                                  placeholder="Enter your phone number"
+                                />
+                                <Phone className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label>Department/Specialization</Label>
+                              <div className="relative">
+                                <Input 
+                                  value={settings.profile.department || ''}
+                                  onChange={(e) => handleProfileChange('department', e.target.value)}
+                                  className="pl-10"
+                                  placeholder="Enter your department"
+                                />
+                                <Building className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label>Languages Spoken</Label>
+                            <div className="relative">
+                              <Input 
+                                value={settings.profile.languages || ''}
+                                onChange={(e) => handleProfileChange('languages', e.target.value)}
+                                className="pl-10"
+                                placeholder="e.g., English, Spanish, French"
+                              />
+                              <Languages className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-4 bg-[#D2E4D3] rounded-lg">
+                            <div>
+                              <p className="font-medium text-[#345E2C]">Accepting New Sessions</p>
+                              <p className="text-sm text-[#345E2C]/70">
+                                Toggle your availability for new counseling sessions
+                              </p>
+                            </div>
+                            <Switch 
+                              checked={settings.profile.isAcceptingNewSessions || false}
+                              onCheckedChange={(checked) => handleProfileChange('isAcceptingNewSessions', checked)}
+                              className="data-[state=checked]:bg-[#345E2C]"
                             />
-                            <Globe className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Location</Label>
+                            <div className="relative">
+                              <Input 
+                                value={settings.profile.location}
+                                onChange={(e) => handleProfileChange('location', e.target.value)}
+                                className="pl-10"
+                                placeholder="Enter your location"
+                              />
+                              <Globe className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label>Website</Label>
+                            <div className="relative">
+                              <Input 
+                                value={settings.profile.website}
+                                onChange={(e) => handleProfileChange('website', e.target.value)}
+                                className="pl-10"
+                                placeholder="https://yourwebsite.com"
+                              />
+                              <Globe className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
+                            </div>
                           </div>
                         </div>
-                        
-                        <div className="space-y-2">
-                          <Label>Website</Label>
-                          <div className="relative">
-                            <Input 
-                              value={settings.profile.website}
-                              onChange={(e) => handleProfileChange('website', e.target.value)}
-                              className="pl-10"
-                              placeholder="https://"
-                            />
-                            <Globe className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
-                          </div>
-                        </div>
-                      </div>
+                      )}
                     </div>
                     
                     <div className="mt-6 flex justify-end space-x-3">
@@ -727,7 +838,8 @@ export default function Settings() {
                 </Card>
               </div>
             )}
-          </motion.div>
+            </motion.div>
+          </div>
         </div>
       </div>
     </div>

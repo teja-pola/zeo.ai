@@ -3,66 +3,72 @@ const mongoose = require('mongoose');
 const counsellorSchema = new mongoose.Schema({
   fullName: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   email: {
     type: String,
     required: true,
-    unique: true,
-    trim: true,
-    lowercase: true
+    unique: true
   },
   password: {
     type: String,
-    required: true,
-    minlength: 6
+    required: true
   },
-  phone: {
+  profilePicture: {
     type: String,
-    trim: true
+    default: null
   },
-  gender: {
+  specialization: {
     type: String,
-    enum: ['male', 'female', 'other', 'prefer-not-to-say']
-  },
-  dateOfBirth: {
-    type: Date
-  },
-  professionalTitle: {
-    type: String,
-    required: true,
-    enum: ['psychologist', 'counselor', 'psychiatrist', 'mentor', 'other']
+    default: 'Clinical Psychologist & Mental Health Specialist'
   },
   qualifications: {
     type: String,
-    required: true
+    default: 'M.A. Psychology, Ph.D. Clinical Psychology'
   },
-  yearsOfExperience: {
-    type: Number,
-    required: true,
-    min: 0
+  experience: {
+    type: String,
+    default: '8+ years experience'
   },
-  specializations: {
-    type: [String],
-    required: true
+  isAvailable: {
+    type: Boolean,
+    default: true
+  },
+  phone: {
+    type: String,
+    default: ''
+  },
+  department: {
+    type: String,
+    default: ''
   },
   languages: {
-    type: [String],
-    required: true
+    type: String,
+    default: ''
   },
-  affiliation: {
-    type: String
+  bio: {
+    type: String,
+    default: ''
   },
-  availability: {
-    type: String
+  totalSessions: {
+    type: Number,
+    default: 0
   },
-  documents: {
-    type: [String] // Store file paths or URLs
+  weekSessions: {
+    type: Number,
+    default: 0
   },
-  consent: {
-    type: Boolean,
-    required: true
+  averageRating: {
+    type: Number,
+    default: 0
+  },
+  averageDuration: {
+    type: Number,
+    default: 0
+  },
+  activeDays: {
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true

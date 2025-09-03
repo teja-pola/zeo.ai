@@ -11,11 +11,14 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Booking from "./pages/Booking";
-import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import StudentLogin from "./pages/StudentLogin";
+import CounsellorLogin from "./pages/CounsellorLogin";
+import Roll from './pages/Roll';
+import NotFound from './pages/NotFound';
 import Signup from "./pages/Signup";
-import CounsellorSignup from "./pages/CounsellorSignup";
-import StudentSignup from "./pages/StudentSignup";
-import Roll from "./pages/Roll";
+import CounsellorSignup from './pages/CounsellorSignup';
+import StudentSignup from './pages/StudentSignup';
 import Resources from "./pages/Resources";
 import "./i18n";
 
@@ -50,30 +53,26 @@ const App = () => (
             {/* Routes with navbar */}
             <Route element={<MainLayout />}>
               <Route path="/" element={<Landing />} />
-              <Route path="/session" element={<Session />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/resources" element={<Resources />} />
             </Route>
             
             {/* Routes without navbar */}
             <Route element={<AuthLayout />}>
+            <Route path="/session" element={<Session />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/login/student" element={<StudentLogin />} />
+              <Route path="/login/counsellor" element={<CounsellorLogin />} />
               <Route path="/booking" element={<Booking />} />
-              <Route path="*" element={<NotFound />} />
-            </Route>
-
-            {/* Routes without navbar */}
-            <Route element={<AuthLayout />}>
               <Route path="/signup" element={<Signup />} />
               <Route path="/signup/counsellor" element={<CounsellorSignup />} />
               <Route path="/signup/student" element={<StudentSignup />} />
-              <Route path="/roll" element={<Roll />} />
+              <Route path="/role" element={<Roll />} />
+              <Route path="*" element={<NotFound />} />
             </Route>
-
-         
-            </Routes>   
-
-              
-            
-          
+          </Routes>
         </TavusProvider>
       </BrowserRouter>
     </TooltipProvider>
