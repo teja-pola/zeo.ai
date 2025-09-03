@@ -82,11 +82,16 @@ const StudentSignup = () => {
       const data = await response.json();
       
       if (response.ok) {
+        // Store user data in localStorage for dashboard access
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('userType', 'student');
+        localStorage.setItem('token', data.token);
+        
         toast({
           title: "Success",
           description: "Student account created successfully!",
         });
-        // Navigate to dashboard or login page
+        // Navigate to dashboard
         navigate("/dashboard");
       } else {
         toast({

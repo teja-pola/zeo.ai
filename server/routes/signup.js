@@ -55,7 +55,8 @@ router.post('/counsellor', async (req, res) => {
     
     res.status(201).json({
       message: 'Counsellor registered successfully',
-      counsellor: counsellorData
+      user: counsellorData,
+      token: 'mock-jwt-token-' + savedCounsellor._id
     });
   } catch (error) {
     console.error('Error registering counsellor:', error);
@@ -109,7 +110,8 @@ router.post('/student', async (req, res) => {
     
     res.status(201).json({
       message: 'Student registered successfully',
-      student: studentData
+      user: studentData,
+      token: 'mock-jwt-token-' + savedStudent._id
     });
   } catch (error) {
     console.error('Error registering student:', error);

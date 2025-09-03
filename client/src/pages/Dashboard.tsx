@@ -149,7 +149,13 @@ export default function Dashboard() {
       if (profileResponse.ok) {
         const profileData = await profileResponse.json();
         console.log('Profile data received:', profileData);
-        setUser(prevUser => ({ ...prevUser, ...profileData }));
+        // Update user state with database data
+        setUser(prevUser => ({ 
+          ...prevUser, 
+          ...profileData,
+          specialization: profileData.specializations ? profileData.specializations.join(', ') : profileData.specialization,
+          experience: profileData.yearsOfExperience ? `${profileData.yearsOfExperience} years` : profileData.experience
+        }));
       } else {
         console.error('Profile fetch failed:', await profileResponse.text());
       }
