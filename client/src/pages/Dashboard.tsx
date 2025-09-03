@@ -225,7 +225,7 @@ export default function Dashboard() {
       <DashboardSidebar />
       
       {/* Main Content - 81% width with left margin for sidebar */}
-      <div className="ml-[19%] w-[81%] p-6">
+      <div className="ml-[15%] w-[84%] p-6">
         <div className="container mx-auto space-y-8">
         {/* Conditional Dashboard Content */}
         {userType === 'counsellor' ? (

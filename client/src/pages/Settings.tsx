@@ -196,7 +196,7 @@ export default function Settings() {
       <DashboardSidebar />
       
       {/* Settings Sidebar */}
-      <div className="w-[15%] h-screen bg-card border-r flex flex-col fixed left-[19%] top-0">
+      <div className="w-[12%] h-screen bg-card border-r flex flex-col fixed left-[14%] top-0">
         <div className="p-4 pb-2">
           <h2 className="text-lg font-bold text-gray-800">
             Settings
@@ -228,7 +228,7 @@ export default function Settings() {
       </div>
       
       {/* Main Content - Adjusted for both sidebars */}
-      <div className="ml-[34%] w-[66%] p-6">
+      <div className="ml-[25%] w-[100%] p-6">
         <div className="container mx-auto space-y-8">
           {/* Main Content */}
           <div className="overflow-y-auto">

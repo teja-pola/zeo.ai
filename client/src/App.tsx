@@ -20,6 +20,8 @@ import Signup from "./pages/Signup";
 import CounsellorSignup from './pages/CounsellorSignup';
 import StudentSignup from './pages/StudentSignup';
 import Resources from "./pages/Resources";
+import Community from "./pages/Community";
+import Chats from "./pages/Chats";
 import "./i18n";
 
 
@@ -59,6 +61,8 @@ const App = () => (
             {/* Routes without navbar */}
             <Route element={<AuthLayout />}>
             <Route path="/session" element={<Session />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/chats" element={<Chats />} />
             <Route path="/resources" element={<Resources />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
