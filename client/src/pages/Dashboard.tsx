@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Avatar3D from '@/components/Avatar3D';
@@ -21,7 +22,8 @@ import {
   Timer, 
   ThumbsUp, 
   Brain, 
-  Smile 
+  Smile,
+  CalendarPlus
 } from 'lucide-react';
 
 const moodData = [
@@ -115,6 +117,7 @@ interface RecentSession {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [userType, setUserType] = useState<string>('');
   const [averageMood] = useState(7.2);
@@ -509,9 +512,12 @@ export default function Dashboard() {
               </div>
 
               <div className="flex items-center gap-4">
-                <Button variant="glass" className="group">
-                  <Calendar className="w-4 h-4" />
-                  Schedule Session
+                <Button 
+                  onClick={() => navigate('/booking')}
+                  className="bg-[#345E2C] hover:bg-[#2a4a24] text-white group"
+                >
+                  <CalendarPlus className="w-4 h-4" />
+                  Book Session
                 </Button>
                 <Button variant="hero" className="group">
                   <MessageCircle className="w-4 h-4" />
@@ -648,11 +654,22 @@ export default function Dashboard() {
             >
               <Card className="glass border-border/20">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Heart className="w-5 h-5 text-red-400" />
-                    Recent Sessions
-                  </CardTitle>
-                  <CardDescription>Your latest conversations with ZEO</CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Heart className="w-5 h-5 text-red-400" />
+                        Recent Sessions
+                      </CardTitle>
+                      <CardDescription>Your latest conversations with ZEO</CardDescription>
+                    </div>
+                    <Button 
+                      onClick={() => navigate('/booking')}
+                      className="bg-[#345E2C] hover:bg-[#2a4a24] text-white rounded-full flex items-center gap-2"
+                    >
+                      <CalendarPlus className="w-4 h-4" />
+                      Book a Session
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -685,6 +702,24 @@ export default function Dashboard() {
                       </motion.div>
                     ))}
                   </div>
+                  
+                  {/* Empty state with booking prompt */}
+                  {recentSessions.length === 0 && (
+                    <div className="text-center py-8">
+                      <Heart className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-medium text-muted-foreground mb-2">No sessions yet</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Start your wellness journey by booking your first session with a professional counsellor.
+                      </p>
+                      <Button 
+                        onClick={() => navigate('/booking')}
+                        className="bg-[#345E2C] hover:bg-[#2a4a24] text-white rounded-full"
+                      >
+                        <CalendarPlus className="w-4 h-4 mr-2" />
+                        Book Your First Session
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>

@@ -24,6 +24,8 @@ import Community from "./pages/Community";
 import Chats from "./pages/Chats";
 import "./i18n";
 import ChatWidget from "./components/ChatWidget";
+import CounsellorBookings from "./pages/CounsellorBookings";
+import StudentSessions from "./pages/StudentSessions";
 
 
 
@@ -76,6 +78,8 @@ const App = () => (
               <Route path="/signup/student" element={<StudentSignup />} />
               <Route path="/role" element={<Roll />} />
               <Route path="*" element={<NotFound />} />
+              <Route path="/sessions" element={<CounsellorBookings />} />
+              <Route path="/student/sessions" element={<StudentSessions />} />
             </Route>
           </Routes>
           <ChatWidget />
