@@ -54,12 +54,12 @@ const App = () => (
             <Route element={<MainLayout />}>
               <Route path="/" element={<Landing />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/resources" element={<Resources />} />
             </Route>
             
             {/* Routes without navbar */}
             <Route element={<AuthLayout />}>
             <Route path="/session" element={<Session />} />
+            <Route path="/resources" element={<Resources />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/login" element={<Login />} />
