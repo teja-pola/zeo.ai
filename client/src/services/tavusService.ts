@@ -12,8 +12,17 @@ export interface Replica {
   error_message: string | null;
 }
 
+export interface Conversation {
+  id: string;
+  created_at: string;
+  status: string;
+  conversation_url: string;
+  // Add other fields as needed
+}
+
 export interface ConversationResponse {
   conversation_url: string;
+  id?: string; // Make id optional for backward compatibility
 }
 
 export interface ApiError {
@@ -47,6 +56,23 @@ export const tavusService = {
     }
   },
 
+  async listConversations(): Promise<Conversation[]> {
+    try {
+      const response = await api.get<Conversation[]>('/tavus/conversations');
+      return response.data;
+    } catch (error) {
+      throw createApiError(error, 'Failed to list conversations');
+    }
+  },
+
+  async endConversation(conversationId: string): Promise<void> {
+    try {
+      await api.post(`/tavus/conversations/${conversationId}/end`);
+    } catch (error) {
+      throw createApiError(error, 'Failed to end conversation');
+    }
+  },
+
   async createConversation(personaId?: string): Promise<ConversationResponse> {
     try {
       const payload: { persona_id?: string } = {};
@@ -59,12 +85,33 @@ export const tavusService = {
 
       const response = await api.post<ConversationResponse>(
         '/tavus/conversation',
-        personaId ? { personaId } : {}
+        { personaId } // Send personaId directly, let server handle the rest
       );
       
       return response.data;
     } catch (error) {
       throw createApiError(error, 'Failed to create conversation');
+    }
+  },
+
+  // Helper to clean up old conversations
+  async cleanupOldConversations(): Promise<void> {
+    try {
+      const conversations = await this.listConversations();
+      if (conversations.length > 0) {
+        // End all conversations except the most recent one
+        const activeConversations = conversations
+          .filter(c => c.status === 'active')
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        
+        // Keep the most recent conversation active, end the rest
+        for (let i = 1; i < activeConversations.length; i++) {
+          await this.endConversation(activeConversations[i].id);
+        }
+      }
+    } catch (error) {
+      console.error('Error cleaning up old conversations:', error);
+      // Don't throw, as this is a background cleanup operation
     }
   }
 };

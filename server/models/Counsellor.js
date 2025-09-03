@@ -43,8 +43,8 @@ const counsellorSchema = new mongoose.Schema({
     default: ''
   },
   languages: {
-    type: String,
-    default: ''
+    type: [String],
+    default: []
   },
   bio: {
     type: String,

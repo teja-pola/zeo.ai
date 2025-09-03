@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { Replica, ConversationResponse } from '@/services/tavusService';
+import { Replica, ConversationResponse, Conversation } from '@/services/tavusService';
 import { tavusApi } from '@/services/api/tavus';
 
 interface TavusContextType {
@@ -45,20 +45,32 @@ export const TavusProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     try {
       setLoading(true);
       setError(null);
-      const response = await tavusApi.createConversation(personaId);
-      return response;
+      
+      try {
+        // First try to create a new conversation
+        return await tavusApi.createConversation(personaId);
+      } catch (error) {
+        // If we get a concurrent conversation error, clean up old ones and retry
+        if (error?.message?.includes('maximum concurrent conversations') || 
+            error?.details?.message?.includes('maximum concurrent conversations')) {
+          console.log('Concurrent conversation limit reached, cleaning up old conversations...');
+          await tavusApi.cleanupOldConversations();
+          return await tavusApi.createConversation(personaId);
+        }
+        throw error; // Re-throw if it's a different error
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create conversation';
       setError(errorMessage);
-      console.error('Error creating conversation:', err);
+      console.error('Error in createConversation:', err);
       throw err;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const refreshReplica = useCallback(async () => {
-    return fetchReplica();
+  const refreshReplica = useCallback(async (): Promise<void> => {
+    await fetchReplica();
   }, [fetchReplica]);
 
   // Memoize context value to prevent unnecessary re-renders

@@ -1,7 +1,7 @@
 {
   "name": "zeo-ai-backend",
   "version": "1.0.0",
-  "description": "Backend for ZEO AI - Tavus API Integration",
+  "description": "Backend for ZEO AI ",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
