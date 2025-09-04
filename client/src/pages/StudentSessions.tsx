@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -16,23 +16,60 @@ import {
   MapPin,
   Phone,
   Video,
-  CheckCircle
+  CheckCircle,
+  X,
+  CheckCircle2
 } from 'lucide-react';
+import BookingForm from '@/components/BookingForm';
+import { toast } from 'sonner';
 import StudentSidebar from '@/components/StudentSidebar';
 
+// Define interfaces
+interface Session {
+  id: number;
+  counsellorName: string;
+  counsellorTitle: string;
+  counsellorImage: string;
+  date: string;
+  time: string;
+  duration: number;
+  rating: number | null;
+  problems: string[];
+  notes: string;
+  sessionType: string;
+  status: string;
+}
+
+interface Counsellor {
+  id: number;
+  name: string;
+  title: string;
+  specializations: string[];
+  introduction: string;
+  availableSlots: Array<{
+    id: number;
+    date: string;
+    time: string;
+    duration: number;
+  }>;
+  languages: string[];
+  rating: number;
+  image: string;
+}
+
 // Mock data for student sessions
-const mockStudentSessions = [
+const mockStudentSessions: Session[] = [
   {
     id: 1,
     counsellorName: 'Dr. Sarah Johnson',
     counsellorTitle: 'Licensed Clinical Psychologist',
     counsellorImage: 'https://media.istockphoto.com/id/2193010762/photo/smiling-woman-girl-student-holding-using-tabled-pad-standing-isolated-over-white-background.webp?a=1&b=1&s=612x612&w=0&k=20&c=43i3nvkFMQm5ICaVX9RxB8jAcmEFSMb68iTAjON_jgg=',
-    date: '2024-01-20',
-    time: '2:00 PM',
-    duration: 45,
-    rating: 5,
+    date: '2025-09-15',
+    time: '14:30',
+    duration: 60,
+    rating: 4.8,
     problems: ['Anxiety', 'Stress Management'],
-    notes: 'Discussed breathing techniques and coping strategies for exam stress. Made significant progress.',
+    notes: 'Discussed breathing techniques and mindfulness exercises.',
     sessionType: 'Video Call',
     status: 'Completed'
   },
@@ -41,10 +78,10 @@ const mockStudentSessions = [
     counsellorName: 'Michael Chen',
     counsellorTitle: 'Student Counsellor',
     counsellorImage: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop&crop=face',
-    date: '2024-01-18',
-    time: '10:30 AM',
+    date: '2025-09-18',
+    time: '10:30',
     duration: 30,
-    rating: 4,
+    rating: 4.7,
     problems: ['Academic Pressure', 'Time Management'],
     notes: 'Worked on creating a study schedule and managing academic workload effectively.',
     sessionType: 'Phone Call',
@@ -55,10 +92,10 @@ const mockStudentSessions = [
     counsellorName: 'Dr. Emily Rodriguez',
     counsellorTitle: 'Licensed Professional Counselor',
     counsellorImage: 'https://plus.unsplash.com/premium_photo-1670282393309-70fd7f8eb1ef?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8Z2lybHxlbnwwfHwwfHx8MA%3D%3D',
-    date: '2024-01-15',
-    time: '4:15 PM',
+    date: '2025-09-15',
+    time: '16:15',
     duration: 50,
-    rating: 5,
+    rating: 4.9,
     problems: ['Depression', 'Self-Esteem'],
     notes: 'Explored self-worth and practiced positive affirmations. Homework assigned for daily journaling.',
     sessionType: 'Video Call',
@@ -69,8 +106,8 @@ const mockStudentSessions = [
     counsellorName: 'Dr. James Wilson',
     counsellorTitle: 'Behavioral Therapist',
     counsellorImage: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&h=400&fit=crop&crop=face',
-    date: '2024-01-25',
-    time: '3:00 PM',
+    date: '2025-09-25',
+    time: '15:00',
     duration: 45,
     rating: null,
     problems: ['Follow-up Session', 'Anxiety'],
@@ -89,12 +126,12 @@ const mockCounsellors = [
     specializations: ['Anxiety', 'Depression', 'Stress Management'],
     introduction: 'Experienced in cognitive behavioral therapy with a focus on helping students overcome academic and personal challenges.',
     availableSlots: [
-      { id: 1, date: '2025-09-05', time: '10:00 AM', duration: 45 },
-      { id: 2, date: '2025-09-05', time: '2:00 PM', duration: 45 },
-      { id: 3, date: '2025-09-06', time: '11:00 AM', duration: 45 },
-      { id: 4, date: '2025-09-07', time: '3:00 PM', duration: 45 },
+      { id: 1, date: '2025-09-05', time: '10:00', duration: 45 },
+      { id: 2, date: '2025-09-05', time: '14:00', duration: 45 },
+      { id: 3, date: '2025-09-06', time: '11:00', duration: 45 },
+      { id: 4, date: '2025-09-07', time: '15:00', duration: 45 },
     ],
-    languages: ['English', 'French'],
+    languages: ['English', 'Hindi', 'Telugu'],
     rating: 4.9,
     image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face',
   },
@@ -105,11 +142,11 @@ const mockCounsellors = [
     specializations: ['Academic Stress', 'Career Guidance', 'Mindfulness'],
     introduction: 'Focus on helping students develop coping strategies and achieve academic success through evidence-based approaches.',
     availableSlots: [
-      { id: 5, date: '2025-09-05', time: '9:00 AM', duration: 30 },
-      { id: 6, date: '2025-09-05', time: '1:00 PM', duration: 30 },
-      { id: 7, date: '2025-09-06', time: '10:00 AM', duration: 30 },
+      { id: 5, date: '2025-09-05', time: '9:00', duration: 30 },
+      { id: 6, date: '2025-09-05', time: '13:00', duration: 30 },
+      { id: 7, date: '2025-09-06', time: '10:00', duration: 30 },
     ],
-    languages: ['English', 'Mandarin'],
+    languages: ['English', 'Tamil', 'Malayalam'],
     rating: 4.7,
     image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop&crop=face',
   },
@@ -120,11 +157,11 @@ const mockCounsellors = [
     specializations: ['Depression', 'Trauma', 'Self-Esteem'],
     introduction: 'Experienced in trauma-informed care and helping students build resilience and emotional well-being.',
     availableSlots: [
-      { id: 8, date: '2025-09-05', time: '11:00 AM', duration: 30 },
-      { id: 9, date: '2025-09-06', time: '2:00 PM', duration: 30 },
-      { id: 10, date: '2025-09-07', time: '9:00 AM', duration: 30 },
+      { id: 8, date: '2025-09-05', time: '11:00', duration: 30 },
+      { id: 9, date: '2025-09-06', time: '14:00', duration: 30 },
+      { id: 10, date: '2025-09-07', time: '9:00', duration: 30 },
     ],
-    languages: ['English', 'Spanish'],
+    languages: ['English', 'Kannada', 'Hindi', 'Tamil'],
     rating: 4.8,
     image: 'https://plus.unsplash.com/premium_photo-1670282393309-70fd7f8eb1ef?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8Z2lybHxlbnwwfHwwfHx8MA%3D%3D',
   },
@@ -140,20 +177,63 @@ const availableDates = [
 
 export default function StudentSessions() {
   const navigate = useNavigate();
-  const [sessions, setSessions] = useState(mockStudentSessions);
+  const [sessions, setSessions] = useState<Session[]>(mockStudentSessions);
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'my-sessions' | 'book-session'>('my-sessions');
-  
-  // Booking states
-  const [selectedCounsellor, setSelectedCounsellor] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
-  const [selectedSlot, setSelectedSlot] = useState<any>(null);
-  const [bookingStep, setBookingStep] = useState<number>(1);
+  
+  const [bookingStep, setBookingStep] = useState(1);
+  const [selectedCounsellor, setSelectedCounsellor] = useState<Counsellor | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<{
+    id: number;
+    date: string;
+    time: string;
+    duration: number;
+  } | null>(null);
   const [bookingDetails, setBookingDetails] = useState({
     sessionType: 'Video Call',
     problems: '',
     additionalNotes: ''
   });
+
+
+  // Filter sessions into upcoming and completed
+  const { upcomingSessions, completedSessions, totalHours, averageRating } = useMemo(() => {
+    const now = new Date();
+    const upcoming: Session[] = [];
+    const completed: Session[] = [];
+
+    sessions.forEach(session => {
+      try {
+        const sessionDate = new Date(session.date);
+        const [hours, minutes] = session.time.split(':').map(Number);
+        sessionDate.setHours(hours, minutes, 0, 0);
+        
+        if (session.status === 'Upcoming' && sessionDate > now) {
+          upcoming.push(session);
+        } else if (session.status === 'Completed') {
+          completed.push(session);
+        }
+      } catch (error) {
+        console.error('Error processing session:', session, error);
+      }
+    });
+
+    const hours = completed.reduce((total, session) => {
+      return total + (session.duration || 0);
+    }, 0);
+    
+    const avgRating = completed.length > 0 
+      ? completed.reduce((sum, session) => sum + (session.rating || 0), 0) / completed.length 
+      : 0;
+
+    return { 
+      upcomingSessions: upcoming, 
+      completedSessions: completed,
+      totalHours: hours,
+      averageRating: avgRating
+    };
+  }, [sessions]);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -165,14 +245,7 @@ export default function StudentSessions() {
     if (availableDates.length > 0 && !selectedDate) {
       setSelectedDate(availableDates[0]);
     }
-  }, [selectedDate]);
-
-  const completedSessions = sessions.filter(session => session.status === 'Completed');
-  const upcomingSessions = sessions.filter(session => session.status === 'Upcoming');
-  const totalHours = completedSessions.reduce((total, session) => total + session.duration, 0);
-  const averageRating = completedSessions.length > 0 
-    ? completedSessions.reduce((sum, session) => sum + (session.rating || 0), 0) / completedSessions.length 
-    : 0;
+  }, [selectedDate, availableDates]);
 
   const handleCounsellorSelect = (counsellor: any) => {
     setSelectedCounsellor(counsellor);
@@ -184,13 +257,51 @@ export default function StudentSessions() {
     setBookingStep(3);
   };
 
-  const handleBookingConfirm = () => {
-    console.log('Booking confirmed:', {
-      counsellor: selectedCounsellor,
-      slot: selectedSlot,
-      details: bookingDetails,
-    });
-    setBookingStep(4);
+  const handleBookingConfirm = async (details: any) => {
+    try {
+      // In a real app, this would be an API call to book the session
+      console.log('Booking confirmed:', {
+        counsellor: selectedCounsellor,
+        slot: selectedSlot,
+        details: details,
+      });
+      
+      // Update local state with the new session
+      const newSession = {
+        id: Math.floor(Math.random() * 1000), // Generate a random ID in a real app
+        counsellorName: selectedCounsellor.name,
+        counsellorTitle: selectedCounsellor.title,
+        counsellorImage: selectedCounsellor.image,
+        date: selectedSlot.date,
+        time: selectedSlot.time,
+        duration: selectedSlot.duration,
+        rating: null,
+        problems: details.problems.split(',').map((p: string) => p.trim()),
+        notes: details.additionalNotes,
+        sessionType: details.sessionType,
+        status: 'Upcoming'
+      };
+      
+      setSessions([newSession, ...sessions]);
+      resetBooking();
+      setActiveTab('my-sessions');
+      
+      // Show success toast with animation
+      toast.success(
+        <div className="flex items-center space-x-2">
+          <CheckCircle2 className="h-5 w-5 text-green-500" />
+          <span>Session booked successfully!</span>
+        </div>,
+        {
+          duration: 3000,
+          className: 'bg-white border border-green-200 shadow-lg',
+          position: 'top-center',
+        }
+      );
+    } catch (error) {
+      console.error('Error booking session:', error);
+      toast.error('Failed to book session. Please try again.');
+    }
   };
 
   const resetBooking = () => {
@@ -345,6 +456,103 @@ export default function StudentSessions() {
                 </Card>
               </motion.div>
 
+              {/* Upcoming Appointments */}
+              {upcomingSessions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                  className="mb-8"
+                >
+                  <Card className="border-[#345E2C]/20 bg-[#F0F7EE]">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-[#345E2C]">
+                        <CalendarPlus className="w-5 h-5" />
+                        Upcoming Appointments
+                      </CardTitle>
+                      <CardDescription>Your scheduled counselling sessions</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="divide-y divide-[#345E2C]/10">
+                        {upcomingSessions.map((session) => (
+                          <div key={session.id} className="p-6 hover:bg-white/50 transition-colors">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start space-x-4">
+                                <img
+                                  src={session.counsellorImage}
+                                  alt={session.counsellorName}
+                                  className="w-14 h-14 rounded-full object-cover border-2 border-[#345E2C]/20"
+                                />
+                                <div>
+                                  <h3 className="font-medium text-gray-900">{session.counsellorName}</h3>
+                                  <p className="text-sm text-gray-600">{session.counsellorTitle}</p>
+                                  <div className="flex items-center mt-2 space-x-4 text-sm">
+                                    <span className="flex items-center text-gray-600">
+                                      <Calendar className="w-4 h-4 mr-1.5 text-[#345E2C]" />
+                                      {new Date(session.date).toLocaleDateString('en-US', {
+                                        weekday: 'short',
+                                        month: 'short',
+                                        day: 'numeric',
+                                      })}
+                                    </span>
+                                    <span className="flex items-center text-gray-600">
+                                      <Clock className="w-4 h-4 mr-1.5 text-[#345E2C]" />
+                                      {session.time}
+                                    </span>
+                                    <span className="flex items-center text-gray-600">
+                                      {session.sessionType === 'Video Call' ? (
+                                        <Video className="w-4 h-4 mr-1.5 text-[#345E2C]" />
+                                      ) : (
+                                        <Phone className="w-4 h-4 mr-1.5 text-[#345E2C]" />
+                                      )}
+                                      {session.sessionType}
+                                    </span>
+                                  </div>
+                                  {session.problems && session.problems.length > 0 && (
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                      {session.problems.map((problem, idx) => (
+                                        <span
+                                          key={idx}
+                                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#345E2C]/10 text-[#345E2C]"
+                                        >
+                                          {problem}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-[#345E2C] text-[#345E2C] hover:bg-[#345E2C]/10"
+                                  onClick={() => {
+                                    // Handle join session
+                                  }}
+                                >
+                                  Join Session
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-gray-600 hover:bg-gray-100"
+                                  onClick={() => {
+                                    // Handle reschedule
+                                  }}
+                                >
+                                  Reschedule
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
               {/* Session History */}
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
@@ -355,9 +563,13 @@ export default function StudentSessions() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Heart className="w-5 h-5 text-red-400" />
-                      Session History
+                      {upcomingSessions.length > 0 ? 'Past Sessions' : 'My Sessions'}
                     </CardTitle>
-                    <CardDescription>Your completed counselling sessions</CardDescription>
+                    <CardDescription>
+                      {upcomingSessions.length > 0 
+                        ? 'Your completed counselling sessions' 
+                        : 'All your counselling sessions'}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="grid gap-4 p-6">
@@ -535,6 +747,78 @@ export default function StudentSessions() {
                 </CardContent>
               </Card>
             </div>
+          )}
+
+          {/* Booking Flow Modals */}
+          {bookingStep === 2 && selectedCounsellor && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <motion.div 
+                className="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+              >
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {selectedCounsellor.name}'s Availability
+                    </h2>
+                    <button
+                      onClick={resetBooking}
+                      className="text-gray-400 hover:text-gray-500"
+                    >
+                      <X className="h-6 w-6" />
+                    </button>
+                  </div>
+
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                      Select a time slot
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {selectedCounsellor.availableSlots.map((slot: any) => (
+                        <button
+                          key={slot.id}
+                          onClick={() => handleSlotSelect(slot)}
+                          className="p-3 border border-gray-200 rounded-lg text-left hover:border-[#345E2C] hover:bg-[#345E2C]/5 transition-colors"
+                        >
+                          <div className="font-medium">
+                            {new Date(slot.date).toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {slot.time} ({slot.duration} min)
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={resetBooking}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+
+          {bookingStep === 3 && selectedCounsellor && selectedSlot && (
+            <BookingForm
+              counsellor={selectedCounsellor}
+              selectedSlot={selectedSlot}
+              onBack={() => setBookingStep(2)}
+              onConfirm={handleBookingConfirm}
+              onCancel={resetBooking}
+            />
           )}
         </div>
       </div>

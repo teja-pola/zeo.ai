@@ -319,8 +319,15 @@ export default function Resources() {
 
   const languages = [
     { code: "en", label: "English" },
-    { code: "te", label: "Telugu" },
-    { code: "hi", label: "Hindi" },
+    { code: "hi", label: "हिंदी (Hindi)" },
+    { code: "te", label: "తెలుగు (Telugu)" },
+    { code: "ta", label: "தமிழ் (Tamil)" },
+    { code: "kn", label: "ಕನ್ನಡ (Kannada)" },
+    { code: "ml", label: "മലയാളം (Malayalam)" },
+    { code: "mr", label: "मराठी (Marathi)" },
+    { code: "bn", label: "বাংলা (Bengali)" },
+    { code: "gu", label: "ગુજરાતી (Gujarati)" },
+    { code: "pa", label: "ਪੰਜਾਬੀ (Punjabi)" },
     { code: "ta", label: "Tamil" },
     { code: "kn", label: "Kannada" },
     { code: "ml", label: "Malayalam" },

@@ -159,6 +159,16 @@ export default function Settings() {
     setSettings(prev => ({ ...prev, activeTab: tab }));
   };
 
+  const updateSettings = (section: keyof Omit<SettingsState, 'activeTab' | 'profile'>, updates: any) => {
+    setSettings(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        ...updates
+      }
+    }));
+  };
+
   const tabs: { id: SettingsTab; icon: React.ReactNode; label: string }[] = [
     { id: 'profile', icon: <User className="h-5 w-5" />, label: 'Profile' },
     { id: 'account', icon: <Shield className="h-5 w-5" />, label: 'Account' },
@@ -642,18 +652,22 @@ export default function Settings() {
                       <h3 className="font-medium">Language</h3>
                       <Select 
                         value={settings.appearance.language}
-                        onValueChange={(value) => handleSettingChange('appearance', 'language', value)}
+                        onValueChange={(value) => updateSettings('appearance', { ...settings.appearance, language: value })}
                       >
                         <SelectTrigger className="w-[200px]">
                           <SelectValue placeholder="Select language" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="en-US">English (US)</SelectItem>
-                          <SelectItem value="es-ES">Español</SelectItem>
-                          <SelectItem value="fr-FR">Français</SelectItem>
-                          <SelectItem value="de-DE">Deutsch</SelectItem>
-                          <SelectItem value="ja-JP">日本語</SelectItem>
-                          <SelectItem value="zh-CN">中文 (简体)</SelectItem>
+                          <SelectItem value="en">English</SelectItem>
+                          <SelectItem value="hi">हिंदी (Hindi)</SelectItem>
+                          <SelectItem value="te">తెలుగు (Telugu)</SelectItem>
+                          <SelectItem value="ta">தமிழ் (Tamil)</SelectItem>
+                          <SelectItem value="kn">ಕನ್ನಡ (Kannada)</SelectItem>
+                          <SelectItem value="ml">മലയാളം (Malayalam)</SelectItem>
+                          <SelectItem value="mr">मराठी (Marathi)</SelectItem>
+                          <SelectItem value="bn">বাংলা (Bengali)</SelectItem>
+                          <SelectItem value="gu">ગુજરાતી (Gujarati)</SelectItem>
+                          <SelectItem value="pa">ਪੰਜਾਬੀ (Punjabi)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

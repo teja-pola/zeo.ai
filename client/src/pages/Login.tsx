@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, User, Lock, School, UserCheck } from 'lucide-react';
+import { AlertCircle, User, Lock, School, UserCheck, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Login() {
@@ -63,7 +63,15 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zeo-primary to-[#1a1e23] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zeo-primary to-[#1a1e23] p-4 relative">
+      <button 
+        onClick={() => navigate('/')}
+        className="absolute top-6 left-6 z-20 flex items-center text-green-100 hover:text-white transition-colors text-base font-semibold drop-shadow"
+        style={{backdropFilter:'blur(8px)'}}
+      >
+        <ArrowLeft className="w-5 h-5 mr-2" />
+        Back to Home
+      </button>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

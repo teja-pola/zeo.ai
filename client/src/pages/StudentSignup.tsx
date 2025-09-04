@@ -292,7 +292,16 @@ const StudentSignup = () => {
                     <SelectValue placeholder="Select your preferred language" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="english">English</SelectItem>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="hi">हिंदी (Hindi)</SelectItem>
+                    <SelectItem value="te">తెలుగు (Telugu)</SelectItem>
+                    <SelectItem value="ta">தமிழ் (Tamil)</SelectItem>
+                    <SelectItem value="kn">ಕನ್ನಡ (Kannada)</SelectItem>
+                    <SelectItem value="ml">മലയാളം (Malayalam)</SelectItem>
+                    <SelectItem value="mr">मराठी (Marathi)</SelectItem>
+                    <SelectItem value="bn">বাংলা (Bengali)</SelectItem>
+                    <SelectItem value="gu">ગુજરાતી (Gujarati)</SelectItem>
+                    <SelectItem value="pa">ਪੰਜਾਬੀ (Punjabi)</SelectItem>
                     <SelectItem value="hindi">Hindi</SelectItem>
                     <SelectItem value="telugu">Telugu</SelectItem>
                     <SelectItem value="tamil">Tamil</SelectItem>

@@ -113,7 +113,7 @@ const Roll = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                <Link to="/signup/student" className="block">
+                <Link to="/login/student" className="block">
                   <Button
                     className="w-full h-11 text-base font-semibold bg-zeo-primary hover:bg-green-700 text-white rounded-xl transition-all duration-200 shadow border border-green-300/30"
                   >
@@ -126,7 +126,7 @@ const Roll = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                <Link to="/signup/counsellor" className="block">
+                <Link to="/login/counsellor" className="block">
                   <Button
                     className="w-full h-11 text-base font-semibold bg-zeo-primary hover:bg-green-700 text-white rounded-xl transition-all duration-200 shadow border border-green-200/30"
                   >

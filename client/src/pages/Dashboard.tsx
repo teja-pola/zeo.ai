@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import Avatar3D from '@/components/Avatar3D';
+import { useTavus } from '@/contexts/TavusContext';
+
 import DashboardSidebar from '@/components/DashboardSidebar';
 import { 
   Calendar, 
@@ -116,6 +117,9 @@ interface RecentSession {
   topics: string[];
 }
 
+  
+
+  
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
@@ -126,7 +130,16 @@ export default function Dashboard() {
   const [currentStreak] = useState(12);
   const [totalSessions] = useState(47);
   const [loading, setLoading] = useState(false);
+  const { replica, error, createConversation } = useTavus();
   
+  const handleStartSession = async () => {
+    try {
+      const { conversation_url } = await createConversation();
+      navigate(`/session?url=${encodeURIComponent(conversation_url)}`);
+    } catch (error) {
+      console.error('Failed to start session:', error);
+    }
+  };
   // Counsellor-specific data
   const [counsellorStats, setCounsellorStats] = useState<CounsellorStats>({
     totalSessions: 0,
@@ -716,7 +729,7 @@ export default function Dashboard() {
                         className="bg-[#345E2C] hover:bg-[#2a4a24] text-white rounded-full"
                       >
                         <CalendarPlus className="w-4 h-4 mr-2" />
-                        Book Your First Session
+                        Join Your First Session
                       </Button>
                     </div>
                   )}
@@ -733,10 +746,16 @@ export default function Dashboard() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.5 }}
             >
-              <Card className="glass border-border/20 text-center">
+              <Card className="glass border-border/20 text-center ">
                 <CardContent className="p-6">
-                  <Avatar3D size="md" className="mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">ZEO is ready to help</h3>
+                {replica?.thumbnail_video_url ? (
+              <video src={replica.thumbnail_video_url} autoPlay loop muted playsInline className="w-full h-auto object-cover rounded-xl pb-4" style={{ maxHeight: 480 }} />
+            ) : (
+              <div className="aspect-video bg-gray-900 flex items-center justify-center">
+                <span className="text-white">AI Companion</span>
+              </div>
+            )}
+                  <h3 className="font-semibold mb-2">zeo.ai is ready to help</h3>
                   <p className="text-sm text-muted-foreground mb-4">
                     Start a new session to continue your wellness journey
                   </p>
