@@ -130,7 +130,7 @@ export default function ChatWidget() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="absolute bottom-16 right-0 w-80 bg-white rounded-xl shadow-xl overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700 dark:bg-gray-800"
+            className="absolute bottom-16 right-0 w-85 md:w-[22rem] lg:w-[28rem] max-h-[62vh] bg-white rounded-xl shadow-xl overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700 dark:bg-gray-800"
           >
             <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
               <h3 className="font-semibold text-gray-900 dark:text-white">Chat with zeo.ai</h3>
