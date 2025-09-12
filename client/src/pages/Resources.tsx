@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   FileText,
@@ -10,6 +10,7 @@ import {
   Heart,
   MessageCircle,
   Play,
+  Headphones, // <-- Add this line!
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,8 +21,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import axios from "axios";
+import { getCurrentRole } from "@/utils/roleTestHelper";
 
-type ResourceTab = "articles" | "guides" | "videos" | "tools" | "faq";
+type ResourceTab = "articles" | "guides" | "videos" | "tools" | "faq" | "audios";
 
 type Resource = {
   title: string;
@@ -39,8 +42,12 @@ type Resource = {
   link?: string;
   thumbnail?: string;
   duration?: string;
+  body?: string;         // Add this
+  authorBio?: string;    // Add this
+  audioUrl?: string;     // <-- Fix for audios
 };
 
+// Add relaxation audios to translations
 const translations: Record<string, Record<ResourceTab, Resource[]>> = {
   en: {
     articles: [
@@ -56,6 +63,8 @@ const translations: Record<string, Record<ResourceTab, Resource[]>> = {
         likes: 120,
         comments: 15,
         link: "#",
+        body: "Mindfulness is the practice of being present and fully engaged with whatever we are doing at the moment. It helps reduce anxiety and improve focus. <br /><br />**Practical Exercise:**<br />1. Sit comfortably and close your eyes.<br />2. Take a deep breath and focus on the sensation.<br />3. Notice your thoughts without judgment.<br />4. Practice for 5 minutes daily.<br /><br />**Benefits:**<br />- Reduces stress<br />- Improves emotional regulation<br />- Enhances concentration",
+        authorBio: "Priya Sharma is a certified mindfulness coach with 10+ years of experience helping people manage stress and improve well-being.",
       },
       {
         title: "Coping with Stress",
@@ -69,6 +78,8 @@ const translations: Record<string, Record<ResourceTab, Resource[]>> = {
         likes: 98,
         comments: 12,
         link: "#",
+        body: "Stress can be managed with simple daily habits. <br /><br />**Techniques:**<br />- Practice deep breathing for 5 minutes.<br />- Write down your thoughts in a journal.<br />- Create a daily routine and stick to it.<br /><br />**Benefits:**<br />- Reduces anxiety<br />- Improves sleep<br />- Boosts productivity",
+        authorBio: "Rahul Verma is a wellness expert and author, specializing in stress management and self-care routines.",
       },
       {
         title: "Improving Sleep Quality",
@@ -82,6 +93,8 @@ const translations: Record<string, Record<ResourceTab, Resource[]>> = {
         likes: 210,
         comments: 25,
         link: "#",
+        body: "Quality sleep is essential for mental health. <br /><br />**Tips:**<br />- Maintain a regular sleep schedule.<br />- Avoid screens before bedtime.<br />- Try meditation or gentle yoga.<br /><br />**Benefits:**<br />- Better mood<br />- Increased energy<br />- Improved focus",
+        authorBio: "Ananya Iyer is a sleep coach and researcher, helping people develop healthy sleep habits.",
       },
       {
         title: "Building Emotional Resilience",
@@ -95,6 +108,8 @@ const translations: Record<string, Record<ResourceTab, Resource[]>> = {
         likes: 150,
         comments: 20,
         link: "#",
+        body: "Emotional resilience helps you bounce back from setbacks. <br /><br />**Strategies:**<br />- Practice positive self-talk.<br />- Build a support network.<br />- Set realistic goals.<br /><br />**Benefits:**<br />- Greater confidence<br />- Better stress management<br />- Personal growth",
+        authorBio: "Amitabh Singh is a psychologist and motivational speaker, focused on emotional growth and resilience.",
       },
     ],
     guides: [
@@ -164,6 +179,18 @@ const translations: Record<string, Record<ResourceTab, Resource[]>> = {
     ],
     videos: [
       {
+        title: "Morning Energizing Stretch",
+        description: "Quick morning stretches to energize your body and mind.",
+        author: "Siddharth Joshi",
+        avatar: "https://i.pravatar.cc/40?img=58",
+        date: "Sep 07, 2025",
+        duration: "05:00",
+        thumbnail: "https://i.ytimg.com/vi/sPZAyyNrP3k/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLCF874XF41UdJveKuUFWWq9HPbvWQ",
+        likes: 190,
+        comments: 28,
+        link: "#",
+      },
+      {
         title: "10-Min Mindfulness Meditation",
         description:
           "Short guided meditation to help you focus and reduce anxiety in just 10 minutes.",
@@ -171,7 +198,7 @@ const translations: Record<string, Record<ResourceTab, Resource[]>> = {
         avatar: "https://i.pravatar.cc/40?img=54",
         date: "Aug 12, 2025",
         duration: "10:00",
-        thumbnail: "data:image/jpeg;base64,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",
+        thumbnail: "https://th.bing.com/th/id/OIP.9CdJ6taKsM-rljM-eEERNAHaEK?w=320&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3" ,
         likes: 200,
         comments: 30,
         link: "#",
@@ -215,20 +242,14 @@ const translations: Record<string, Record<ResourceTab, Resource[]>> = {
         comments: 22,
         link: "#",
       },
-      {
-        title: "Morning Energizing Stretch",
-        description: "Quick morning stretches to energize your body and mind.",
-        author: "Siddharth Joshi",
-        avatar: "https://i.pravatar.cc/40?img=58",
-        date: "Sep 07, 2025",
-        duration: "05:00",
-        thumbnail: "https://i.ytimg.com/vi/sPZAyyNrP3k/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLCF874XF41UdJveKuUFWWq9HPbvWQ",
-        likes: 190,
-        comments: 28,
-        link: "#",
-      },
     ],
     tools: [
+      {
+        title: "Habit Builder",
+        description:
+          "Track and build positive habits with reminders and streak tracking for better mental health.",
+        link: "#",
+      },
       {
         title: "Mood Tracker",
         description:
@@ -239,12 +260,6 @@ const translations: Record<string, Record<ResourceTab, Resource[]>> = {
         title: "Daily Journal",
         description:
           "Reflect on your thoughts and activities each day to improve self-awareness and mindfulness.",
-        link: "#",
-      },
-      {
-        title: "Habit Builder",
-        description:
-          "Track and build positive habits with reminders and streak tracking for better mental health.",
         link: "#",
       },
       {
@@ -302,42 +317,851 @@ const translations: Record<string, Record<ResourceTab, Resource[]>> = {
           "Yes, premium features include advanced analytics, personalized recommendations, and priority support.",
       },
     ],
+    audios: [
+      {
+        title: "Calm Ocean Waves",
+        description: "Relax with soothing ocean wave sounds.",
+        author: "ZEO Relax",
+        avatar: "https://i.pravatar.cc/40?img=60",
+        date: "Sep 11, 2025",
+        duration: "10:00",
+        thumbnail: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80",
+        audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+        likes: 120,
+        comments: 10,
+      },
+      {
+        title: "Gentle Rain",
+        description: "Let gentle rain help you unwind.",
+        author: "ZEO Relax",
+        avatar: "https://i.pravatar.cc/40?img=61",
+        date: "Sep 10, 2025",
+        duration: "15:00",
+        thumbnail: "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80",
+        audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+        likes: 98,
+        comments: 8,
+      },
+      {
+        title: "Forest Birds",
+        description: "Enjoy peaceful forest birds chirping.",
+        author: "ZEO Relax",
+        avatar: "https://i.pravatar.cc/40?img=62",
+        date: "Sep 09, 2025",
+        duration: "12:00",
+        thumbnail: "https://th.bing.com/th/id/OIP.hqRW2JpJeLnd-v669AOEJwHaEc?w=305&h=183&c=7&r=0&o=5&dpr=1.3&pid=1.7",
+        audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+        likes: 110,
+        comments: 12,
+      },
+    ],
   },
 };
 
 export default function Resources() {
   const [activeTab, setActiveTab] = useState<ResourceTab>("articles");
   const [lang, setLang] = useState("en");
+  const [realArticle, setRealArticle] = useState<Resource | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState<Resource | null>(null);
+  const [guideModalOpen, setGuideModalOpen] = useState(false);
+  const [selectedGuide, setSelectedGuide] = useState<Resource | null>(null);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<Resource | null>(null);
+  const [playingVideoIdx, setPlayingVideoIdx] = useState<number | null>(null);
+  const [toolsModalOpen, setToolsModalOpen] = useState(false);
+  const [selectedTool, setSelectedTool] = useState<Resource | null>(null);
+  const [audioModalOpen, setAudioModalOpen] = useState(false);
+  const [selectedAudio, setSelectedAudio] = useState<Resource | null>(null);
+  const [userRole, setUserRole] = useState<"student" | "counsellor">("student");
+  // Add state for add modals
+  const [addModalOpen, setAddModalOpen] = useState<null | ResourceTab>(null);
+  // Add state for resources
+  const [resources, setResources] = useState(translations[lang]);
+
+  useEffect(() => {
+    // Try to get from localStorage (userType or userRole)
+    const storedRole = localStorage.getItem("userType") || getCurrentRole();
+    if (storedRole === "counsellor" || storedRole === "student") {
+      setUserRole(storedRole);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "articles") {
+      setLoading(true);
+      setError(null);
+      fetch("https://api.example.com/articles/1")
+        .then((res) => {
+          if (!res.ok) throw new Error("API error");
+          return res.json();
+        })
+        .then((data) => {
+          setRealArticle({
+            title: data.title,
+            description: data.description,
+            author: data.author,
+            avatar: data.avatar,
+            date: data.date,
+            readingTime: data.readingTime,
+            tags: data.tags,
+            likes: data.likes,
+            comments: data.comments,
+            link: data.link,
+          });
+          setLoading(false);
+        })
+        .catch(() => {
+          // Fallback to mock data if API fails
+          setRealArticle({
+            title: "Mindfulness Basics (Live Demo)",
+            description: "Learn the fundamentals of mindfulness, how to focus on the present, and practical exercises to reduce anxiety.",
+            author: "Priya Sharma",
+            avatar: "https://i.pravatar.cc/40?img=47",
+            date: "Aug 20, 2025",
+            readingTime: "5 min read",
+            tags: ["Mindfulness", "Focus", "Anxiety"],
+            likes: 120,
+            comments: 15,
+            link: "#",
+            body: "Mindfulness is the practice of being present and fully engaged with whatever we are doing at the moment. It helps reduce anxiety and improve focus. <br /><br />**Practical Exercise:**<br />1. Sit comfortably and close your eyes.<br />2. Take a deep breath and focus on the sensation.<br />3. Notice your thoughts without judgment.<br />4. Practice for 5 minutes daily.<br /><br />**Benefits:**<br />- Reduces stress<br />- Improves emotional regulation<br />- Enhances concentration",
+            authorBio: "Priya Sharma is a certified mindfulness coach with 10+ years of experience helping people manage stress and improve well-being.",
+          });
+          setLoading(false);
+          setError(null);
+        });
+    }
+  }, [activeTab]);
 
   const tabs: { id: ResourceTab; icon: React.ReactNode; label: string }[] = [
     { id: "articles", icon: <FileText className="h-5 w-5" />, label: "Articles" },
     { id: "guides", icon: <BookOpen className="h-5 w-5" />, label: "Guides" },
     { id: "videos", icon: <Video className="h-5 w-5" />, label: "Videos" },
+    { id: "audios", icon: <Headphones className="h-5 w-5" />, label: "Relaxation Audios" }, // <-- Changed icon here!
     { id: "tools", icon: <Lightbulb className="h-5 w-5" />, label: "Tools" },
     { id: "faq", icon: <HelpCircle className="h-5 w-5" />, label: "FAQ" },
   ];
 
-  const languages = [
-    { code: "en", label: "English" },
-    { code: "hi", label: "हिंदी (Hindi)" },
-    { code: "te", label: "తెలుగు (Telugu)" },
-    { code: "ta", label: "தமிழ் (Tamil)" },
-    { code: "kn", label: "ಕನ್ನಡ (Kannada)" },
-    { code: "ml", label: "മലയാളം (Malayalam)" },
-    { code: "mr", label: "मराठी (Marathi)" },
-    { code: "bn", label: "বাংলা (Bengali)" },
-    { code: "gu", label: "ગુજરાતી (Gujarati)" },
-    { code: "pa", label: "ਪੰਜਾਬੀ (Punjabi)" },
-    { code: "ta", label: "Tamil" },
-    { code: "kn", label: "Kannada" },
-    { code: "ml", label: "Malayalam" },
-  ];
+  // Simple Modal Component
+  const ArticleModal = ({ article, open, onClose }: { article: Resource | null; open: boolean; onClose: () => void }) => {
+    if (!open || !article) return null;
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+        style={{ backdropFilter: "blur(2px)" }}
+        onClick={onClose}
+      >
+        <div
+          className="bg-white rounded-lg shadow-lg max-w-xl w-full p-6 relative z-10 overflow-y-auto max-h-[90vh]"
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl"
+            onClick={onClose}
+          >
+            ×
+          </button>
+          <div className="flex items-center space-x-3 mb-4">
+            <img src={article.avatar} alt={article.author} className="w-12 h-12 rounded-full object-cover" />
+            <div>
+              <div className="font-semibold">{article.author}</div>
+              <div className="text-sm text-muted-foreground">{article.date} • {article.readingTime}</div>
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold mb-2">{article.title}</h2>
+          <p className="mb-4">{article.description}</p>
+          {article.tags && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {article.tags.map((tag, i) => (
+                <span key={i} className="text-xs bg-zeo-primary/20 text-zeo-primary px-2 py-0.5 rounded-full">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-4 text-sm text-muted-foreground mb-4">
+            <span className="flex items-center gap-1">
+              <Heart className="w-4 h-4" /> {article.likes}
+            </span>
+            <span className="flex items-center gap-1">
+              <MessageCircle className="w-4 h-4" /> {article.comments}
+            </span>
+          </div>
+          {/* Show author bio if available */}
+          {article.authorBio && (
+            <div className="mb-4">
+              <span className="font-semibold">About the author:</span>
+              <p className="text-sm text-muted-foreground">{article.authorBio}</p>
+            </div>
+          )}
+          {/* Show full article body */}
+          {article.body && (
+            <div className="prose prose-sm max-w-none mb-4" dangerouslySetInnerHTML={{ __html: article.body }} />
+          )}
+          {/* Show steps if available */}
+          {article.steps && (
+            <div className="mb-4">
+              <span className="font-semibold">Practical Steps:</span>
+              <ol className="list-decimal list-inside text-sm mt-2 space-y-1">
+                {article.steps.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ol>
+            </div>
+          )}
+          {/* Social share (example) */}
+          <div className="mt-6 flex gap-3">
+            <Button variant="outline" size="sm">Share</Button>
+            <Button variant="outline" size="sm">Bookmark</Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Add this inside your Resources component, after ArticleModal:
+  const GuideModal = ({ guide, open, onClose }: { guide: Resource | null; open: boolean; onClose: () => void }) => {
+    if (!open || !guide) return null;
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+        style={{ backdropFilter: "blur(2px)" }}
+        onClick={onClose}
+      >
+        <div
+          className="bg-white rounded-lg shadow-lg max-w-xl w-full p-6 relative z-10 overflow-y-auto max-h-[90vh]"
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl"
+            onClick={onClose}
+          >
+            ×
+          </button>
+          <div className="flex items-center space-x-3 mb-4">
+            <img src={guide.avatar} alt={guide.author} className="w-12 h-12 rounded-full object-cover" />
+            <div>
+              <div className="font-semibold">{guide.author}</div>
+              <div className="text-sm text-muted-foreground">{guide.date} • {guide.readingTime}</div>
+            </div>
+          </div>
+                   <h2 className="text-2xl font-bold mb-2">{guide.title}</h2>
+          <p className="mb-4">{guide.description}</p>
+          {guide.tags && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {guide.tags.map((tag, i) => (
+                <span key={i} className="text-xs bg-zeo-primary/20 text-zeo-primary px-2 py-0.5 rounded-full">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+          {guide.category && (
+            <div className="mb-2 text-xs text-zeo-primary font-semibold">{guide.category}</div>
+          )}
+          {guide.difficulty && (
+            <div className="mb-2 text-xs text-muted-foreground">Difficulty: {guide.difficulty}</div>
+          )}
+          {/* Show steps if available */}
+          {guide.steps && (
+            <div className="mb-4">
+              <span className="font-semibold">Steps:</span>
+              <ol className="list-decimal list-inside text-sm mt-2 space-y-1">
+                {guide.steps.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ol>
+            </div>
+          )}
+          <div className="flex gap-4 text-sm text-muted-foreground mb-2">
+            <span className="flex items-center gap-1">
+              <Heart className="w-4 h-4" /> {guide.likes}
+            </span>
+            <span className="flex items-center gap-1">
+              <MessageCircle className="w-4 h-4" /> {guide.comments}
+            </span>
+          </div>
+          <div className="mt-6 flex gap-3">
+            <Button variant="outline" size="sm">Share</Button>
+            <Button variant="outline" size="sm">Bookmark</Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Video Modal Component
+  const VideoModal = ({ video, open, onClose }: { video: Resource | null; open: boolean; onClose: () => void }) => {
+    if (!open || !video) return null;
+
+    // Try to extract YouTube video ID from thumbnail or add a videoUrl field to your Resource type
+    let videoSrc = "";
+    if (video.thumbnail?.includes("youtube.com") || video.thumbnail?.includes("youtu.be")) {
+      // If thumbnail is a YouTube link, use it
+      videoSrc = video.thumbnail.replace("watch?v=", "embed/");
+    } else if (video.thumbnail?.includes("i.ytimg.com")) {
+      // If thumbnail is a YouTube image, use a sample video ID (replace with your own logic)
+      videoSrc = "https://www.youtube.com/embed/sPZAyyNrP3k";
+    } else if (video.link && video.link.startsWith("http")) {
+      // If you have a direct video link
+      videoSrc = video.link;
+    }
+
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+        style={{ backdropFilter: "blur(2px)" }}
+        onClick={onClose}
+      >
+        <div
+          className="bg-white rounded-lg shadow-lg max-w-xl w-full p-6 relative z-10 overflow-y-auto max-h-[90vh]"
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl"
+            onClick={onClose}
+          >
+            ×
+          </button>
+          <div className="mb-4">
+            {videoSrc.includes("youtube.com") ? (
+              <iframe
+                width="100%"
+                height="315"
+                src={videoSrc}
+                title={video.title}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="rounded-lg"
+              />
+            ) : videoSrc ? (
+              <video controls width="100%" className="rounded-lg">
+                <source src={videoSrc} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            ) : (
+              <img src={video.thumbnail} alt={video.title} className="w-full h-56 object-cover rounded-lg" />
+            )}
+          </div>
+          <div className="flex items-center space-x-3 mb-4">
+            <img src={video.avatar} alt={video.author} className="w-12 h-12 rounded-full object-cover" />
+            <div>
+              <div className="font-semibold">{video.author}</div>
+              <div className="text-sm text-muted-foreground">{video.date} • {video.duration}</div>
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold mb-2">{video.title}</h2>
+          <p className="mb-4">{video.description}</p>
+          <div className="flex gap-4 text-sm text-muted-foreground mb-4">
+            <span className="flex items-center gap-1">
+              <Heart className="w-4 h-4" /> {video.likes}
+            </span>
+            <span className="flex items-center gap-1">
+              <MessageCircle className="w-4 h-4" /> {video.comments}
+            </span>
+          </div>
+          <div className="mt-6 flex gap-3">
+            <Button variant="outline" size="sm">Share</Button>
+            <Button variant="outline" size="sm">Bookmark</Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const AudioModal = ({ audio, open, onClose }: { audio: Resource | null; open: boolean; onClose: () => void }) => {
+    if (!open || !audio) return null;
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+        style={{ backdropFilter: "blur(2px)" }}
+        onClick={onClose}
+      >
+        <div
+          className="bg-white rounded-lg shadow-lg max-w-xl w-full p-6 relative z-10 overflow-y-auto max-h-[90vh]"
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl"
+            onClick={onClose}
+          >
+            ×
+          </button>
+          <div className="mb-4">
+            <img src={audio.thumbnail} alt={audio.title} className="w-full h-56 object-cover rounded-lg mb-4" />
+            <audio controls autoPlay className="w-full">
+              <source src={audio.audioUrl} type="audio/mp3" />
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+          <div className="flex items-center space-x-3 mb-4">
+            <img src={audio.avatar} alt={audio.author} className="w-12 h-12 rounded-full object-cover" />
+            <div>
+              <div className="font-semibold">{audio.author}</div>
+              <div className="text-sm text-muted-foreground">{audio.date} • {audio.duration}</div>
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold mb-2">{audio.title}</h2>
+          <p className="mb-4">{audio.description}</p>
+          <div className="flex gap-4 text-sm text-muted-foreground mb-4">
+            <span className="flex items-center gap-1">
+              <Heart className="w-4 h-4" /> {audio.likes}
+            </span>
+            <span className="flex items-center gap-1">
+              <MessageCircle className="w-4 h-4" /> {audio.comments}
+            </span>
+          </div>
+          <div className="mt-6 flex gap-3">
+            <Button variant="outline" size="sm">Share</Button>
+            <Button variant="outline" size="sm">Bookmark</Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const ToolsModal = ({ tool, open, onClose }: { tool: Resource | null; open: boolean; onClose: () => void }) => {
+    const [mood, setMood] = useState("");
+    const [journal, setJournal] = useState("");
+    const [habits, setHabits] = useState<string[]>([]);
+    const [newHabit, setNewHabit] = useState("");
+    const [timer, setTimer] = useState<number>(0);
+    const [timerActive, setTimerActive] = useState(false);
+    const [newTimer, setNewTimer] = useState<number>(0);
+    const [gratitudes, setGratitudes] = useState<string[]>([]);
+    const [newGratitude, setNewGratitude] = useState("");
+
+    const today = new Date().toISOString().slice(0, 10);
+    const [journalInput, setJournalInput] = useState("");
+    const [journalEntries, setJournalEntries] = useState<{ date: string; text: string }[]>([]);
+
+    // Load from localStorage on mount
+    useEffect(() => {
+      const stored = localStorage.getItem("zeo_journal_entries");
+      if (stored) setJournalEntries(JSON.parse(stored));
+    }, []);
+
+    // Save to localStorage whenever journalEntries changes
+    useEffect(() => {
+      localStorage.setItem("zeo_journal_entries", JSON.stringify(journalEntries));
+    }, [journalEntries]);
+
+    // Habits
+    useEffect(() => {
+      const stored = localStorage.getItem("zeo_habits");
+      if (stored) setHabits(JSON.parse(stored));
+    }, []);
+
+    useEffect(() => {
+      localStorage.setItem("zeo_habits", JSON.stringify(habits));
+    }, [habits]);
+
+    // Gratitudes
+    useEffect(() => {
+      const stored = localStorage.getItem("zeo_gratitudes");
+      if (stored) setGratitudes(JSON.parse(stored));
+    }, []);
+
+    useEffect(() => {
+      localStorage.setItem("zeo_gratitudes", JSON.stringify(gratitudes));
+    }, [gratitudes]);
+
+    const prompts = [
+      "What made you smile today?",
+      "Describe a challenge you overcame.",
+      "Write about someone you appreciate.",
+      "What are you grateful for today?",
+      "How did you take care of yourself today?",
+      "What's a goal you want to achieve?",
+      "Reflect on a positive moment from today.",
+    ];
+    const [showPrompt, setShowPrompt] = useState(false);
+    const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
+
+    // Timer logic
+    useEffect(() => {
+      let interval: NodeJS.Timeout | undefined;
+      if (timerActive && timer > 0) {
+        interval = setInterval(() => setTimer((t) => t - 1), 1000);
+      } else if (timer === 0) {
+        setTimerActive(false);
+      }
+      return () => interval && clearInterval(interval);
+    }, [timerActive, timer]);
+
+    if (!open || !tool) return null;
+
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+        style={{ backdropFilter: "blur(2px)" }}
+        onClick={onClose}
+      >
+        <div
+          className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative z-10"
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl"
+            onClick={onClose}
+          >
+            ×
+          </button>
+          <h2 className="text-xl font-bold mb-4">{tool.title}</h2>
+          <p className="mb-4">{tool.description}</p>
+          {tool.title === "Mood Tracker" && (
+            <div>
+              <label className="block mb-2 font-medium">How are you feeling today?</label>
+              <select
+                value={mood}
+                onChange={e => setMood(e.target.value)}
+                className="w-full border rounded px-3 py-2 mb-4"
+              >
+                <option value="">Select mood</option>
+                <option value="Happy">😊 Happy</option>
+                <option value="Sad">😢 Sad</option>
+                <option value="Stressed">😟 Stressed</option>
+                <option value="Excited">😃 Excited</option>
+                <option value="Calm">😌 Calm</option>
+              </select>
+              {mood && <div className="mb-2">You logged: <b>{mood}</b></div>}
+              <Button variant="outline" size="sm" onClick={() => setMood("")}>Clear</Button>
+            </div>
+          )}
+          {tool.title === "Daily Journal" && (
+            <div>
+              <label className="block mb-2 font-medium">Journal for <b>{today}</b>:</label>
+              <textarea
+                value={journalInput}
+                onChange={e => setJournalInput(e.target.value)}
+                rows={5}
+                className="w-full border rounded px-3 py-2 mb-2"
+                placeholder="Type your thoughts for today..."
+              />
+              <div className="flex gap-2 mb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (journalInput.trim()) {
+                      setJournalEntries((entries) => {
+                        const others = entries.filter(entry => entry.date !== today);
+                        return [...others, { date: today, text: journalInput.trim() }];
+                      });
+                      setJournalInput("");
+                    }
+                  }}
+                  disabled={!journalInput.trim()}
+                >
+                  Add Entry
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPrompt(true)}
+                >
+                  Need Inspiration?
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setJournalEntries(entries => entries.filter(entry => entry.date !== today));
+                    setJournalInput("");
+                  }}
+                  disabled={!journalEntries.find(e => e.date === today)}
+                >
+                  Clear Today's Entry
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setJournalEntries([])}
+                  disabled={journalEntries.length === 0}
+                >
+                  Clear All
+                </Button>
+              </div>
+              {showPrompt && (
+                <div className="mb-4 p-2 bg-muted rounded text-sm text-muted-foreground">
+                  <b>Prompt:</b> {randomPrompt}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2"
+                    onClick={() => setShowPrompt(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              )}
+              {journalEntries.length > 0 && (
+                <div>
+                  <div className="font-semibold mb-2">Previous Entries:</div>
+                  <ul className="list-disc ml-5">
+                    {journalEntries
+                      .sort((a, b) => b.date.localeCompare(a.date))
+                      .map((entry, i) => (
+                        <li key={i} className="flex items-center justify-between">
+                          <span>
+                            <span className="font-mono text-xs text-muted-foreground">{entry.date}:</span>
+                            <span className="ml-2">{entry.text}</span>
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setJournalEntries(journalEntries.filter((_, idx) => idx !== i))}
+                          >
+                            Delete
+                          </Button>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+          {tool.title === "Habit Builder" && (
+            <div>
+              <label className="block mb-2 font-medium">Add a new habit:</label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={newHabit}
+                  onChange={e => setNewHabit(e.target.value)}
+                  className="border rounded px-3 py-2 flex-1"
+                  placeholder="e.g. Drink water"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (newHabit.trim()) {
+                      setHabits([...habits, newHabit.trim()]);
+                      setNewHabit("");
+                    }
+                  }}
+                >
+                  Add
+                </Button>
+              </div>
+              {habits.length > 0 && (
+                <ul className="list-disc ml-5 mb-2">
+                  {habits.map((h, i) => (
+                    <li key={i} className="flex items-center justify-between">
+                      <span>{h}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setHabits(habits.filter((_, idx) => idx !== i))}
+                      >
+                        Remove
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <Button variant="outline" size="sm" onClick={() => setHabits([])}>Clear All</Button>
+            </div>
+          )}
+          {tool.title === "Mindfulness Timer" && (
+            <div>
+              <label className="block mb-2 font-medium">Set timer (seconds):</label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="number"
+                  min={1}
+                  value={timerActive ? timer : newTimer}
+                  onChange={e => setNewTimer(Number(e.target.value))}
+                  className="border rounded px-3 py-2 w-24"
+                  disabled={timerActive}
+                  placeholder="60"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (newTimer > 0) {
+                      setTimer(newTimer);
+                      setTimerActive(true);
+                    }
+                  }}
+                  disabled={timerActive || newTimer < 1}
+                >
+                  Start
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setTimerActive(false);
+                    setTimer(0);
+                    setNewTimer(0);
+                  }}
+                  disabled={!timerActive}
+                >
+                  Stop
+                </Button>
+              </div>
+              {timerActive && timer > 0 && (
+                <div className="mb-2 font-bold text-lg">Time left: {timer}s</div>
+              )}
+              {!timerActive && timer === 0 && (
+                <div className="mb-2 text-green-600">Timer finished!</div>
+              )}
+            </div>
+          )}
+          {tool.title === "Gratitude Log" && (
+            <div>
+              <label className="block mb-2 font-medium">Add something you're grateful for:</label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={newGratitude}
+                  onChange={e => setNewGratitude(e.target.value)}
+                  className="border rounded px-3 py-2 flex-1"
+                  placeholder="e.g. Family"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (newGratitude.trim()) {
+                      setGratitudes([...gratitudes, newGratitude.trim()]);
+                      setNewGratitude("");
+                    }
+                  }}
+                >
+                  Add
+                </Button>
+              </div>
+              {gratitudes.length > 0 && (
+                <ul className="list-disc ml-5 mb-2">
+                  {gratitudes.map((g, i) => (
+                    <li key={i}>{g}</li>
+                  ))}
+                </ul>
+              )}
+              <Button variant="outline" size="sm" onClick={() => setGratitudes([])}>Clear All</Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Add handler to add resource
+  const handleAddResource = (resource: Resource) => {
+    setResources(prev => ({
+      ...prev,
+      [addModalOpen!]: [resource, ...prev[addModalOpen!]],
+    }));
+  };
+
+  // Add Resource Modal
+  const AddResourceModal = ({
+    open,
+    onClose,
+    resourceType,
+    onAdd,
+  }: {
+    open: boolean;
+    onClose: () => void;
+    resourceType: ResourceTab;
+    onAdd: (resource: Resource) => void;
+  }) => {
+    const [form, setForm] = useState<any>({});
+    if (!open) return null;
+
+    // Simple fields for demo; can be expanded per type
+    const fields: { label: string; name: string; type?: string }[] =
+      resourceType === "articles"
+        ? [
+            { label: "Title", name: "title" },
+            { label: "Description", name: "description" },
+            { label: "Author", name: "author" },
+          ]
+        : resourceType === "guides"
+        ? [
+            { label: "Title", name: "title" },
+            { label: "Description", name: "description" },
+            { label: "Author", name: "author" },
+          ]
+        : resourceType === "videos"
+        ? [
+            { label: "Title", name: "title" },
+            { label: "Description", name: "description" },
+            { label: "Author", name: "author" },
+            { label: "Thumbnail URL", name: "thumbnail" },
+          ]
+        : resourceType === "audios"
+        ? [
+            { label: "Title", name: "title" },
+            { label: "Description", name: "description" },
+            { label: "Author", name: "author" },
+            { label: "Audio URL", name: "audioUrl" },
+          ]
+        : resourceType === "tools"
+        ? [
+            { label: "Title", name: "title" },
+            { label: "Description", name: "description" },
+          ]
+        : resourceType === "faq"
+        ? [
+            { label: "Question", name: "title" },
+            { label: "Answer", name: "description" },
+          ]
+        : [];
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" onClick={onClose}>
+        <div
+          className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative z-10"
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl"
+            onClick={onClose}
+          >
+            ×
+          </button>
+          <h2 className="text-xl font-bold mb-4">Add {resourceType.slice(0, -1)}</h2>
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              onAdd(form);
+              setForm({});
+              onClose();
+            }}
+            className="space-y-4"
+          >
+            {fields.map(f => (
+              <div key={f.name}>
+                <label className="block mb-1 font-medium">{f.label}</label>
+                <input
+                  type={f.type || "text"}
+                  className="border rounded px-3 py-2 w-full"
+                  value={form[f.name] || ""}
+                  onChange={e => setForm({ ...form, [f.name]: e.target.value })}
+                  required
+                />
+              </div>
+            ))}
+            <button type="submit" className="bg-zeo-primary text-white px-4 py-2 rounded">Add</button>
+          </form>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zeo-surface via-background to-zeo-surface flex">
       {/* Sidebar */}
       <DashboardSidebar />
-      
+
       {/* Main Content - 81% width with left margin for sidebar */}
       <div className="ml-[15%] w-[84%] p-6">
         <div className="container mx-auto space-y-8">
@@ -387,35 +1211,40 @@ export default function Resources() {
                   {activeTab === "videos" && "Watch tutorials and mindfulness sessions."}
                   {activeTab === "tools" && "Use tools to improve well-being."}
                   {activeTab === "faq" && "Find answers to common questions."}
+                  {activeTab === "audios" && "Listen to relaxing audio tracks."}
                 </p>
               </div>
-
-              <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value)}
-                className="bg-white border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none"
-              >
-                {languages.map((l) => (
-                  <option key={l.code} value={l.code}>
-                    {l.label}
-                  </option>
-                ))}
-              </select>
+              {userRole === "counsellor" && (
+                <Button
+                  variant="default"
+                  onClick={() => setAddModalOpen(activeTab)}
+                  className="ml-4"
+                >
+                  + Add {tabs.find((t) => t.id === activeTab)?.label.slice(0, -1)}
+                </Button>
+              )}
             </div>
 
             {/* Resources Grid / List */}
             {activeTab === "videos" ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {translations[lang][activeTab].map((res, idx) => (
-                  <Card key={idx} className="hover:shadow-lg transition-shadow p-0 overflow-hidden">
+                {resources[activeTab].map((video, idx) => (
+                  <Card
+                    key={idx}
+                    className="hover:shadow-lg transition-shadow p-0 overflow-hidden cursor-pointer"
+                    onClick={() => {
+                      setSelectedVideo(video);
+                      setVideoModalOpen(true);
+                    }}
+                  >
                     <div className="relative group">
                       <img
-                        src={res.thumbnail}
-                        alt={res.title}
+                        src={video.thumbnail}
+                        alt={video.title}
                         className="w-full h-48 object-cover"
                       />
                       <span className="absolute bottom-2 right-2 bg-black bg-opacity-80 text-white px-2 py-0.5 rounded text-xs z-10">
-                        {res.duration}
+                        {video.duration}
                       </span>
                       <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition bg-black/40 z-10">
                         <Play className="w-12 h-12 text-white drop-shadow-lg" />
@@ -424,115 +1253,300 @@ export default function Resources() {
                     <CardContent className="p-4">
                       <div className="flex items-center mb-3">
                         <img
-                          src={res.avatar}
-                          alt={res.author}
+                          src={video.avatar}
+                          alt={video.author}
                           className="w-8 h-8 rounded-full mr-3"
                         />
                         <div>
-                          <div className="font-semibold">{res.author}</div>
-                          <div className="text-xs text-muted-foreground">{res.date}</div>
+                          <div className="font-semibold">{video.author}</div>
+                          <div className="text-xs text-muted-foreground">{video.date}</div>
                         </div>
                       </div>
-                      <CardTitle className="text-base font-bold mb-1">{res.title}</CardTitle>
-                      <CardDescription className="mb-2">{res.description}</CardDescription>
+                      <CardTitle className="text-base font-bold mb-1">{video.title}</CardTitle>
+                      <CardDescription className="mb-2">{video.description}</CardDescription>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
-                          <Heart className="w-4 h-4" /> {res.likes}
+                          <Heart className="w-4 h-4" /> {video.likes}
                         </span>
                         <span className="flex items-center gap-1">
-                          <MessageCircle className="w-4 h-4" /> {res.comments}
+                          <MessageCircle className="w-4 h-4" /> {video.comments}
                         </span>
-                        <a
-                          href={res.link}
-                          className="ml-auto flex items-center gap-1 text-blue-600 hover:underline"
-                        >
-                          Watch <ChevronRight className="w-4 h-4" />
-                        </a>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
+                {/* Video Modal */}
+                <VideoModal video={selectedVideo} open={videoModalOpen} onClose={() => setVideoModalOpen(false)} />
               </div>
             ) : activeTab === "tools" ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {translations[lang][activeTab].map((res, idx) => (
-                  <Card key={idx} className="hover:shadow-lg transition-shadow">
+                {resources[activeTab].map((res, idx) => (
+                  <Card
+                    key={idx}
+                    className="hover:shadow-lg transition-shadow cursor-pointer"
+                    onClick={() => {
+                      setSelectedTool(res);
+                      setToolsModalOpen(true);
+                    }}
+                  >
                     <CardHeader>
                       <CardTitle>{res.title}</CardTitle>
                       <CardDescription>{res.description}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      {res.link && (
-                        <Button variant="outline" size="sm">
-                          Visit
-                        </Button>
-                      )}
+                      <Button variant="outline" size="sm">
+                        Open
+                      </Button>
                     </CardContent>
                   </Card>
                 ))}
+                {/* Tools Modal */}
+                <ToolsModal tool={selectedTool} open={toolsModalOpen} onClose={() => setToolsModalOpen(false)} />
+              </div>
+            ) : activeTab === "guides" ? (
+              <div className="flex flex-col gap-6">
+                {resources[activeTab].map((guide, idx) => (
+                  <Card key={idx} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <CardTitle>{guide.title}</CardTitle>
+                      <CardDescription>{guide.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col md:flex-row justify-between items-start md:items-center mt-2 gap-4">
+                      <div className="flex items-center space-x-3">
+                        <img src={guide.avatar} alt={guide.author} className="w-12 h-12 rounded-full object-cover" />
+                        <div className="flex flex-col">
+                          <span className="font-medium">{guide.author}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {guide.date} • {guide.readingTime} {guide.difficulty && `• ${guide.difficulty}`}
+                          </span>
+                          {guide.category && <span className="text-xs text-zeo-primary mt-1">{guide.category}</span>}
+                          {guide.tags && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {guide.tags.map((tag, i) => (
+                                <span key={i} className="text-xs bg-zeo-primary/20 text-zeo-primary px-2 py-0.5 rounded-full">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4 mt-3 md:mt-0">
+                        {guide.likes !== undefined && (
+                          <div className="flex items-center text-sm text-muted-foreground space-x-1">
+                            <Heart className="w-4 h-4" /> <span>{guide.likes}</span>
+                          </div>
+                        )}
+                        {guide.comments !== undefined && (
+                          <div className="flex items-center text-sm text-muted-foreground space-x-1">
+                            <MessageCircle className="w-4 h-4" /> <span>{guide.comments}</span>
+                          </div>
+                        )}
+                        {guide.link && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedGuide(guide);
+                              setGuideModalOpen(true);
+                            }}
+                          >
+                            Read More
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {/* Guides Modal */}
+                <GuideModal guide={selectedGuide} open={guideModalOpen} onClose={() => setGuideModalOpen(false)} />
+              </div>
+            ) : activeTab === "audios" ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {resources[activeTab].map((audio, idx) => (
+                  <Card
+                    key={idx}
+                    className="hover:shadow-lg transition-shadow p-0 overflow-hidden cursor-pointer"
+                    onClick={() => {
+                      setSelectedAudio(audio);
+                      setAudioModalOpen(true);
+                    }}
+                  >
+                    <div className="relative group">
+                      <img
+                        src={audio.thumbnail}
+                        alt={audio.title}
+                        className="w-full h-48 object-cover"
+                      />
+                      <span className="absolute bottom-2 right-2 bg-black bg-opacity-80 text-white px-2 py-0.5 rounded text-xs z-10">
+                        {audio.duration}
+                      </span>
+                      <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition bg-black/40 z-10">
+                        <Play className="w-12 h-12 text-white drop-shadow-lg" />
+                      </span>
+                    </div>
+                    <CardContent className="p-4">
+                      <div className="flex items-center mb-3">
+                        <img
+                          src={audio.avatar}
+                          alt={audio.author}
+                          className="w-8 h-8 rounded-full mr-3"
+                        />
+                        <div>
+                          <div className="font-semibold">{audio.author}</div>
+                          <div className="text-xs text-muted-foreground">{audio.date}</div>
+                        </div>
+                      </div>
+                      <CardTitle className="text-base font-bold mb-1">{audio.title}</CardTitle>
+                      <CardDescription className="mb-2">{audio.description}</CardDescription>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Heart className="w-4 h-4" /> {audio.likes}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MessageCircle className="w-4 h-4" /> {audio.comments}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {/* Audio Modal */}
+                <AudioModal audio={selectedAudio} open={audioModalOpen} onClose={() => setAudioModalOpen(false)} />
               </div>
             ) : (
               <div className="flex flex-col gap-6">
-                {translations[lang][activeTab].map((res, idx) => (
-                  <Card key={idx} className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <CardTitle>{res.title}</CardTitle>
-                      <CardDescription>{res.description}</CardDescription>
-                    </CardHeader>
-                    {res.author && (
-                      <CardContent className="flex flex-col md:flex-row justify-between items-start md:items-center mt-2 gap-4">
-                        <div className="flex items-center space-x-3">
-                          <img src={res.avatar} alt={res.author} className="w-12 h-12 rounded-full object-cover" />
-                          <div className="flex flex-col">
-                            <span className="font-medium">{res.author}</span>
-                            <span className="text-sm text-muted-foreground">
-                              {res.date} • {res.readingTime} {res.difficulty && `• ${res.difficulty}`}
-                            </span>
-                            {res.category && <span className="text-xs text-zeo-primary mt-1">{res.category}</span>}
-                            {res.steps && (
-                              <ol className="list-decimal list-inside text-sm mt-2 space-y-1">
-                                {res.steps.map((step, i) => (
-                                  <li key={i}>{step}</li>
-                                ))}
-                              </ol>
-                            )}
-                            {res.tags && (
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                {res.tags.map((tag, i) => (
-                                  <span key={i} className="text-xs bg-zeo-primary/20 text-zeo-primary px-2 py-0.5 rounded-full">
-                                    {tag}
-                                  </span>
-                                ))}
+                {activeTab === "articles" ? (
+                  <div className="flex flex-col gap-6">
+                    {[realArticle, ...resources[activeTab].slice(1)]
+                      .filter(Boolean)
+                      .map((article, idx) => (
+                        <Card key={idx} className="hover:shadow-lg transition-shadow">
+                          <CardHeader>
+                            <CardTitle>{article.title}</CardTitle>
+                            <CardDescription>{article.description}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="flex flex-col md:flex-row justify-between items-start md:items-center mt-2 gap-4">
+                            <div className="flex items-center space-x-3">
+                              <img src={article.avatar} alt={article.author} className="w-12 h-12 rounded-full object-cover" />
+                              <div className="flex flex-col">
+                                <span className="font-medium">{article.author}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {article.date} • {article.readingTime}
+                                </span>
+                                {article.tags && (
+                                  <div className="flex flex-wrap gap-2 mt-2">
+                                    {article.tags.map((tag, i) => (
+                                      <span key={i} className="text-xs bg-zeo-primary/20 text-zeo-primary px-2 py-0.5 rounded-full">
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-4 mt-3 md:mt-0">
-                          {res.likes !== undefined && (
-                            <div className="flex items-center text-sm text-muted-foreground space-x-1">
-                              <Heart className="w-4 h-4" /> <span>{res.likes}</span>
                             </div>
-                          )}
-                          {res.comments !== undefined && (
-                            <div className="flex items-center text-sm text-muted-foreground space-x-1">
-                              <MessageCircle className="w-4 h-4" /> <span>{res.comments}</span>
+                            <div className="flex items-center space-x-4 mt-3 md:mt-0">
+                              <div className="flex items-center text-sm text-muted-foreground space-x-1">
+                                <Heart className="w-4 h-4" /> <span>{article.likes}</span>
+                              </div>
+                              <div className="flex items-center text-sm text-muted-foreground space-x-1">
+                                <MessageCircle className="w-4 h-4" /> <span>{article.comments}</span>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedArticle(article);
+                                  setModalOpen(true);
+                                }}
+                              >
+                                Read More
+                              </Button>
                             </div>
-                          )}
-                          {res.link && (
-                            <Button variant="outline" size="sm">
-                              Read More
-                            </Button>
-                          )}
-                        </div>
-                      </CardContent>
-                    )}
-                  </Card>
-                ))}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    {/* Article Modal */}
+                    <ArticleModal article={selectedArticle} open={modalOpen} onClose={() => setModalOpen(false)} />
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-6">
+                    {resources[activeTab].map((res, idx) => (
+                      <Card key={idx} className="hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                          <CardTitle>{res.title}</CardTitle>
+                          <CardDescription>{res.description}</CardDescription>
+                        </CardHeader>
+                        {res.author && (
+                          <CardContent className="flex flex-col md:flex-row justify-between items-start md:items-center mt-2 gap-4">
+                            <div className="flex items-center space-x-3">
+                              <img src={res.avatar} alt={res.author} className="w-12 h-12 rounded-full object-cover" />
+                              <div className="flex flex-col">
+                                <span className="font-medium">{res.author}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {res.date} • {res.readingTime} {res.difficulty && `• ${res.difficulty}`}
+                                </span>
+                                {res.category && <span className="text-xs text-zeo-primary mt-1">{res.category}</span>}
+                                {res.steps && (
+                                  <ol className="list-decimal list-inside text-sm mt-2 space-y-1">
+                                    {res.steps.map((step, i) => (
+                                      <li key={i}>{step}</li>
+                                    ))}
+                                  </ol>
+                                )}
+                                {res.tags && (
+                                  <div className="flex flex-wrap gap-2 mt-2">
+                                    {res.tags.map((tag, i) => (
+                                      <span key={i} className="text-xs bg-zeo-primary/20 text-zeo-primary px-2 py-0.5 rounded-full">
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-4 mt-3 md:mt-0">
+                              {res.likes !== undefined && (
+                                <div className="flex items-center text-sm text-muted-foreground space-x-1">
+                                  <Heart className="w-4 h-4" /> <span>{res.likes}</span>
+                                </div>
+                              )}
+                              {res.comments !== undefined && (
+                                <div className="flex items-center text-sm text-muted-foreground space-x-1">
+                                  <MessageCircle className="w-4 h-4" /> <span>{res.comments}</span>
+                                </div>
+                              )}
+                              {res.link && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedArticle(res);
+                                    setModalOpen(true);
+                                  }}
+                                >
+                                  Read More
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        )}
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </motion.div>
         </div>
       </div>
+      {/* Modal for Article Details */}
+      <ArticleModal article={selectedArticle} open={modalOpen} onClose={() => setModalOpen(false)} />
+      <AddResourceModal
+        open={!!addModalOpen}
+        onClose={() => setAddModalOpen(null)}
+        resourceType={addModalOpen as ResourceTab}
+        onAdd={handleAddResource}
+      />
     </div>
   );
 }
