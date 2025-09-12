@@ -26,6 +26,7 @@ import "./i18n";
 import ChatWidget from "./components/ChatWidget";
 import CounsellorBookings from "./pages/CounsellorBookings";
 import StudentSessions from "./pages/StudentSessions";
+import EmergencyWidget from "./components/EmergencyWidget";
 
 
 
@@ -83,6 +84,7 @@ const App = () => (
             </Route>
           </Routes>
           <ChatWidget />
+          <EmergencyWidget />
         </TavusProvider>
       </BrowserRouter>
     </TooltipProvider>

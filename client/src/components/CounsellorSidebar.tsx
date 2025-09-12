@@ -13,6 +13,7 @@ import {
   Bell,
   Video
 } from 'lucide-react';
+import TranslateWidget from './translate';
 
 interface User {
   fullName: string;
@@ -128,6 +129,11 @@ const CounsellorSidebar: React.FC = () => {
                 {user?.fullName || 'Counsellor'}
               </p>
             </div>
+          </div>
+
+          {/* Translate */}
+          <div className="mt-2">
+            <TranslateWidget inline />
           </div>
 
           {/* Logout Button */}

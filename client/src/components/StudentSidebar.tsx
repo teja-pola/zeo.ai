@@ -9,6 +9,7 @@ import {
   LogOut,
   Video
 } from 'lucide-react';
+import TranslateWidget from './translate';
 
 interface User {
   fullName: string;
@@ -109,6 +110,11 @@ const StudentSidebar: React.FC = () => {
                 {user?.fullName || 'Student'}
               </p>
             </div>
+          </div>
+
+          {/* Translate */}
+          <div className="mt-2">
+            <TranslateWidget inline />
           </div>
 
           {/* Logout Button */}

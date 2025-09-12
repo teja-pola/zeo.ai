@@ -220,3 +220,21 @@ All colors MUST be HSL.
     background: hsl(var(--zeo-primary) / 0.5);
   }
 }
+/* --- Hide Google Translate banners & toolbar fully --- */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-gadget-icon,
+#goog-gt-tt,
+#goog-gt-toolbar,
+.skiptranslate iframe {
+  display: none !important;
+  height: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+body {
+  top: 0 !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
