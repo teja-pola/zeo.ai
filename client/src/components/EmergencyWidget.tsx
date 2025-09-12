@@ -9,18 +9,18 @@ const emergencyIconPath = EmergencyIcon || '/Emergency.png';
 
 export default function EmergencyWidget() {
   return (
-    <div className="fixed bottom-12 left-1/2 transform -translate-x-1/2 z-[9999]">
+  <div className="fixed bottom-12 right-11 z-[9999]">
       <a
-        href="https://www.who.int/india/health-topics/mental-health"
+        href="https://telemanas.mohfw.gov.in/home"
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center justify-center rounded-full w-16 h-16 shadow-lg transition-transform duration-200 hover:scale-150 bg-red-500 hover:bg-red-600 text-white"
+        className="inline-flex items-center justify-center rounded-full w-12 h-12 shadow-lg transition-transform duration-200 hover:scale-150 bg-red-500 hover:bg-red-600 text-white"
         aria-label="Open WHO mental health resources"
       >
         <img 
           src={emergencyIconPath} 
           alt="Emergency Icon" 
-          className="w-12 h-12"
+          className="w-11 h-11"
           onError={(e) => {
             console.error('Emergency icon failed to load:', e);
             const target = e.currentTarget as HTMLImageElement;

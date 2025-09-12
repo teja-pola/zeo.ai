@@ -110,7 +110,7 @@ export default function ChatWidget() {
   };
  
   return (
-    <div className="fixed bottom-12 right-12 z-50">
+  <div className="fixed bottom-32 right-12 z-50">
       <Button 
         variant="secondary" 
         size="icon"
