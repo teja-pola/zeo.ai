@@ -9,6 +9,7 @@
 [![Vite](https://img.shields.io/badge/vite-4.4.5-646CFF.svg)](https://vitejs.dev/)
 [![React](https://img.shields.io/badge/React-18.2.0-61DAFB.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0.2-3178C6.svg)](https://www.typescriptlang.org/)
+[![Development Period](https://img.shields.io/badge/Built-Dec%201--5%2C%202025-blue.svg)]()
 
 ---
 
